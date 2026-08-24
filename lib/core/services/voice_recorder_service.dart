@@ -5,7 +5,7 @@ import 'package:record/record.dart';
 import '../services/api_service.dart';
 import 'package:dio/dio.dart';
 
-/// Wraps [AudioRecorder] + backend Whisper transcription into a clean service.
+/// Wraps [AudioRecorder] into a clean voice recording service.
 class VoiceRecorderService {
   VoiceRecorderService._();
   static final VoiceRecorderService instance = VoiceRecorderService._();
@@ -41,8 +41,8 @@ class VoiceRecorderService {
     }
   }
 
-  /// Stops recording and sends the audio to the backend Whisper endpoint.
-  /// Returns the transcribed text or null on failure.
+  /// Stops recording and transcribes audio if remote service is configured.
+  /// Returns the transcribed text or null.
   Future<String?> stopAndTranscribe({String persona = 'vinr'}) async {
     if (!_isRecording) return null;
     try {
@@ -55,18 +55,20 @@ class VoiceRecorderService {
       final bytes = await file.readAsBytes();
       if (bytes.isEmpty) return null;
 
-      final api = ApiService();
-      final formData = FormData.fromMap({
-        'file': MultipartFile.fromBytes(
-          bytes,
-          filename: 'recording.wav',
-          contentType: DioMediaType('audio', 'wav'),
-        ),
-      });
+      if (ApiService.isConfigured) {
+        final api = ApiService();
+        final formData = FormData.fromMap({
+          'file': MultipartFile.fromBytes(
+            bytes,
+            filename: 'recording.wav',
+            contentType: DioMediaType('audio', 'wav'),
+          ),
+        });
 
-      final response = await api.dio.post('chat/transcribe', data: formData);
-      if (response.statusCode == 200 && response.data != null) {
-        return response.data['text'] as String?;
+        final response = await api.dio.post('chat/transcribe', data: formData);
+        if (response.statusCode == 200 && response.data != null) {
+          return response.data['text'] as String?;
+        }
       }
     } catch (e) {
       debugPrint('VoiceRecorderService.stopAndTranscribe error: $e');

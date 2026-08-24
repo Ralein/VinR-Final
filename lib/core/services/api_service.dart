@@ -1,30 +1,27 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'storage_service.dart';
 
+/// HTTP API Client for optional remote connectivity.
+///
+/// Designed to gracefully handle offline/standalone environments
+/// where no remote FastAPI backend is active.
 class ApiService {
   static String get defaultBaseUrl {
     const envUrl = String.fromEnvironment('API_BASE_URL');
-    if (envUrl.isNotEmpty) return envUrl;
-
-    if (!kIsWeb) {
-      if (Platform.isAndroid || Platform.isIOS) {
-        // ADB reverse on physical Android devices and iOS simulators route via 127.0.0.1:8000
-        return 'http://127.0.0.1:8000/api/v1/';
-      }
-    }
-    return 'http://192.168.0.132:8000/api/v1/';
+    return envUrl;
   }
+
+  static bool get isConfigured => defaultBaseUrl.isNotEmpty;
 
   late final Dio dio;
 
   ApiService([String? customBaseUrl]) {
+    final baseUrl = customBaseUrl ?? defaultBaseUrl;
     dio = Dio(
       BaseOptions(
-        baseUrl: customBaseUrl ?? defaultBaseUrl,
-        connectTimeout: const Duration(seconds: 45),
-        receiveTimeout: const Duration(seconds: 45),
+        baseUrl: baseUrl,
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
         headers: {
           'Content-Type': 'application/json',
         },
