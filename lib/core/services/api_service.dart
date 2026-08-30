@@ -4,14 +4,18 @@ import 'storage_service.dart';
 /// HTTP API Client for optional remote connectivity.
 ///
 /// Designed to gracefully handle offline/standalone environments
-/// where no remote FastAPI backend is active.
+/// where no remote backend is active.
 class ApiService {
   static String get defaultBaseUrl {
     const envUrl = String.fromEnvironment('API_BASE_URL');
-    return envUrl;
+    if (envUrl.isNotEmpty) return envUrl.endsWith('/') ? envUrl : '$envUrl/';
+    return 'https://api.vinr.app/api/v1/';
   }
 
-  static bool get isConfigured => defaultBaseUrl.isNotEmpty;
+  static bool get isCustomConfigured {
+    const envUrl = String.fromEnvironment('API_BASE_URL');
+    return envUrl.isNotEmpty;
+  }
 
   late final Dio dio;
 
@@ -20,8 +24,8 @@ class ApiService {
     dio = Dio(
       BaseOptions(
         baseUrl: baseUrl,
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 10),
+        connectTimeout: const Duration(seconds: 4),
+        receiveTimeout: const Duration(seconds: 4),
         headers: {
           'Content-Type': 'application/json',
         },

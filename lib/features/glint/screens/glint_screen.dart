@@ -171,131 +171,133 @@ class _GlintScreenState extends ConsumerState<GlintScreen> {
                     return Container(
                       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                       child: GlassContainer(
-                        padding: const EdgeInsets.all(22),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Top Tag & Bookmark
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Top Tag & Bookmark
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: color.withValues(alpha: 0.18),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: color.withValues(alpha: 0.3)),
+                                    ),
+                                    child: Text(
+                                      item.tag.toUpperCase(),
+                                      style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(
+                                      item.isFavorite ? LucideIcons.bookmark : LucideIcons.bookmark,
+                                      color: item.isFavorite ? activeGold : mutedTextColor,
+                                      size: 20,
+                                    ),
+                                    onPressed: () {
+                                      glintNotifier.toggleFavorite(item.id);
+                                      VinRToast.show(
+                                        context,
+                                        message: item.isFavorite ? 'Removed from saved' : 'Saved to Glint collection',
+                                        icon: LucideIcons.bookmark,
+                                        iconColor: activeGold,
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+
+                              // Center Orb Icon
+                              Center(
+                                child: Container(
+                                  padding: const EdgeInsets.all(18),
                                   decoration: BoxDecoration(
-                                    color: color.withValues(alpha: 0.18),
+                                    shape: BoxShape.circle,
+                                    color: color.withValues(alpha: 0.12),
+                                    border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: color.withValues(alpha: 0.18),
+                                        blurRadius: 24,
+                                        spreadRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                  child: Icon(icon, color: color, size: 42),
+                                ),
+                              ),
+
+                              const SizedBox(height: 16),
+
+                              // Title
+                              Text(
+                                item.title,
+                                style: VinRTypography.h2.copyWith(color: primaryTextColor, fontSize: 20, height: 1.25),
+                              ),
+                              const SizedBox(height: 8),
+
+                              // Body description
+                              Text(
+                                item.body,
+                                style: VinRTypography.body.copyWith(color: mutedTextColor, height: 1.45, fontSize: 13.5),
+                              ),
+
+                              if (item.quote != null && item.quote!.isNotEmpty) ...[
+                                const SizedBox(height: 14),
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: color.withValues(alpha: 0.08),
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: color.withValues(alpha: 0.3)),
+                                    border: Border(left: BorderSide(color: color, width: 3)),
                                   ),
                                   child: Text(
-                                    item.tag.toUpperCase(),
-                                    style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5),
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: Icon(
-                                    item.isFavorite ? LucideIcons.bookmark : LucideIcons.bookmark,
-                                    color: item.isFavorite ? activeGold : mutedTextColor,
-                                    size: 20,
-                                  ),
-                                  onPressed: () {
-                                    glintNotifier.toggleFavorite(item.id);
-                                    VinRToast.show(
-                                      context,
-                                      message: item.isFavorite ? 'Removed from saved' : 'Saved to Glint collection',
-                                      icon: LucideIcons.bookmark,
-                                      iconColor: activeGold,
-                                    );
-                                  },
-                                ),
-
-                              ],
-                            ),
-                            const Spacer(),
-
-                            // Center Orb Icon
-                            Center(
-                              child: Container(
-                                padding: const EdgeInsets.all(22),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: color.withValues(alpha: 0.12),
-                                  border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: color.withValues(alpha: 0.18),
-                                      blurRadius: 24,
-                                      spreadRadius: 2,
+                                    '“${item.quote}”\n— ${item.author ?? "VinR"}',
+                                    style: TextStyle(
+                                      color: primaryTextColor,
+                                      fontSize: 12.5,
+                                      fontStyle: FontStyle.italic,
+                                      height: 1.4,
                                     ),
-                                  ],
-                                ),
-                                child: Icon(icon, color: color, size: 48),
-                              ),
-                            ),
-
-                            const Spacer(),
-
-                            // Title
-                            Text(
-                              item.title,
-                              style: VinRTypography.h2.copyWith(color: primaryTextColor, fontSize: 22, height: 1.25),
-                            ),
-                            const SizedBox(height: 8),
-
-                            // Body description
-                            Text(
-                              item.body,
-                              style: VinRTypography.body.copyWith(color: mutedTextColor, height: 1.45),
-                            ),
-
-                            if (item.quote != null && item.quote!.isNotEmpty) ...[
-                              const SizedBox(height: 14),
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: color.withValues(alpha: 0.08),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border(left: BorderSide(color: color, width: 3)),
-                                ),
-                                child: Text(
-                                  '“${item.quote}”\n— ${item.author ?? "VinR"}',
-                                  style: TextStyle(
-                                    color: primaryTextColor,
-                                    fontSize: 13,
-                                    fontStyle: FontStyle.italic,
-                                    height: 1.4,
                                   ),
                                 ),
+                              ],
+
+                              const SizedBox(height: 16),
+
+                              // Footer channel & audio indicator
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: activeGold.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      item.channel,
+                                      style: TextStyle(color: activeGold, fontSize: 11, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Icon(LucideIcons.sparkles, color: mutedTextColor, size: 13),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'On-Device AI',
+                                    style: TextStyle(color: mutedTextColor, fontSize: 11),
+                                  ),
+                                ],
                               ),
                             ],
-
-                            const SizedBox(height: 16),
-
-                            // Footer channel & audio indicator
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: activeGold.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    item.channel,
-                                    style: TextStyle(color: activeGold, fontSize: 11, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Icon(LucideIcons.sparkles, color: mutedTextColor, size: 13),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'On-Device AI',
-                                  style: TextStyle(color: mutedTextColor, fontSize: 11),
-                                ),
-                              ],
-                            ),
-                          ],
+                          ),
                         ),
                       ),
+
                     );
                   },
                 ),

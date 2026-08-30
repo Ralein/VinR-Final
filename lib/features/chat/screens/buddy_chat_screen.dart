@@ -407,10 +407,14 @@ class _BuddyChatScreenState extends ConsumerState<BuddyChatScreen>
               onTap: () {
                 Clipboard.setData(ClipboardData(text: msg.text));
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Message copied to clipboard')),
+                VinRToast.show(
+                  context,
+                  message: 'Message copied to clipboard',
+                  icon: LucideIcons.copy,
+                  iconColor: context.goldColor,
                 );
               },
+
             ),
             ListTile(
               leading: Icon(LucideIcons.reply, color: ctx.goldColor, size: 20),
