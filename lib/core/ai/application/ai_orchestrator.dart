@@ -2,7 +2,6 @@ import 'dart:async';
 import '../domain/ai_error.dart';
 import '../domain/ai_request.dart';
 import '../domain/ai_response.dart';
-import '../infrastructure/prompting/prompt_registry.dart';
 import '../infrastructure/runtime/local_llm_runtime.dart';
 import '../infrastructure/runtime/local_llm_runtime_factory.dart';
 import '../infrastructure/runtime/model_manager.dart';

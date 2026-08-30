@@ -45,12 +45,12 @@ class MemoryService {
     final lower = input.toLowerCase();
 
     if (lower.contains('my goal is') || lower.contains('i want to achieve')) {
-      final goal = input.replaceAll(RegExp(r'(?i)my goal is|i want to achieve'), '').trim();
+      final goal = input.replaceAll(RegExp(r'my goal is|i want to achieve', caseSensitive: false), '').trim();
       if (goal.isNotEmpty) {
         await remember(category: AiMemoryCategory.goals, key: 'active_goal', value: goal);
       }
     } else if (lower.contains('i prefer') || lower.contains('call me')) {
-      final pref = input.replaceAll(RegExp(r'(?i)i prefer|call me'), '').trim();
+      final pref = input.replaceAll(RegExp(r'i prefer|call me', caseSensitive: false), '').trim();
       if (pref.isNotEmpty) {
         await remember(category: AiMemoryCategory.preferences, key: 'user_preference', value: pref);
       }
