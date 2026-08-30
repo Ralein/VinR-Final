@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/theme/theme_context.dart';
 import '../../../core/theme/vinr_colors.dart';
@@ -6,47 +7,57 @@ import '../../../core/theme/vinr_typography.dart';
 import '../../../core/widgets/ambient_background.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/vinr_toast.dart';
+import '../models/glint_card_model.dart';
+import '../providers/glint_provider.dart';
 
-class GlintScreen extends StatefulWidget {
+class GlintScreen extends ConsumerStatefulWidget {
   const GlintScreen({super.key});
 
   @override
-  State<GlintScreen> createState() => _GlintScreenState();
+  ConsumerState<GlintScreen> createState() => _GlintScreenState();
 }
 
-class _GlintScreenState extends State<GlintScreen> {
-  String _selectedTopic = 'Stress Relief';
+class _GlintScreenState extends ConsumerState<GlintScreen> {
   bool _showSettings = false;
 
-  final List<Map<String, dynamic>> _glints = [
-    {
-      'title': 'How 4-7-8 Breathing Resets Your Vagus Nerve in 60 Seconds',
-      'channel': 'VinR Science',
-      'tag': 'Stress Relief',
-      'icon': LucideIcons.wind,
-      'color': VinRColors.emerald,
-    },
-    {
-      'title': 'Overcoming the 3-Day Habit Slump on Your 21-Day Winning Streak',
-      'channel': 'Growth Partner',
-      'tag': 'Discipline',
-      'icon': LucideIcons.target,
-      'color': VinRColors.gold,
-    },
-    {
-      'title': '3 Stoic Mindset Tricks for Emotional Fortitude and Calm',
-      'channel': 'Stoic Mind',
-      'tag': 'Mindfulness',
-      'icon': LucideIcons.brain,
-      'color': VinRColors.sapphire,
-    },
-  ];
+  Color _resolveAccentColor(String accent) {
+    switch (accent.toLowerCase()) {
+      case 'emerald':
+        return VinRColors.emerald;
+      case 'sapphire':
+        return VinRColors.sapphire;
+      case 'ruby':
+      case 'crimson':
+        return VinRColors.crimson;
+      case 'gold':
+      default:
+        return VinRColors.gold;
+    }
+  }
+
+  IconData _resolveIcon(String type) {
+    switch (type.toLowerCase()) {
+      case 'streak':
+        return LucideIcons.flame;
+      case 'quote':
+        return LucideIcons.quote;
+      case 'reflection':
+        return LucideIcons.sparkles;
+      case 'challenge':
+        return LucideIcons.target;
+      case 'motivation':
+      default:
+        return LucideIcons.zap;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final primaryTextColor = context.textColor;
     final mutedTextColor = context.textMutedColor;
     final activeGold = context.goldColor;
+    final glintState = ref.watch(glintProvider);
+    final glintNotifier = ref.read(glintProvider.notifier);
 
     return Scaffold(
       body: AmbientBackground(
@@ -74,24 +85,44 @@ class _GlintScreenState extends State<GlintScreen> {
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(color: activeGold.withValues(alpha: 0.3)),
                             ),
-                            child: Text(
-                              _selectedTopic,
-                              style: TextStyle(color: activeGold, fontSize: 11, fontWeight: FontWeight.bold),
+                            child: Row(
+                              children: [
+                                Text(
+                                  glintState.selectedTopic,
+                                  style: TextStyle(color: activeGold, fontSize: 11, fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(LucideIcons.chevronDown, color: activeGold, size: 12),
+                              ],
                             ),
                           ),
                         ),
                       ],
                     ),
-                    IconButton(
-                      icon: Icon(LucideIcons.refreshCw, color: mutedTextColor, size: 20),
-                      onPressed: () {
-                        VinRToast.show(
-                          context,
-                          message: 'Feed refreshed!',
-                          icon: LucideIcons.refreshCw,
-                          iconColor: activeGold,
-                        );
-                      },
+                    Row(
+                      children: [
+                        if (glintState.isGenerating)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: activeGold),
+                            ),
+                          ),
+                        IconButton(
+                          icon: Icon(LucideIcons.refreshCw, color: mutedTextColor, size: 20),
+                          onPressed: () {
+                            glintNotifier.loadGlintsForTopic(glintState.selectedTopic, forceRefresh: true);
+                            VinRToast.show(
+                              context,
+                              message: 'Generating fresh on-device Glints...',
+                              icon: LucideIcons.sparkles,
+                              iconColor: activeGold,
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -110,17 +141,15 @@ class _GlintScreenState extends State<GlintScreen> {
                       Wrap(
                         spacing: 8,
                         children: ['Stress Relief', 'Focus', 'Discipline', 'Mindfulness'].map((topic) {
-                          final isSel = _selectedTopic == topic;
+                          final isSel = glintState.selectedTopic == topic;
                           return ChoiceChip(
                             selected: isSel,
-                            label: Text(topic, style: TextStyle(color: isSel ? Colors.black : primaryTextColor)),
+                            label: Text(topic, style: TextStyle(color: isSel ? Colors.black : primaryTextColor, fontWeight: isSel ? FontWeight.bold : FontWeight.normal)),
                             selectedColor: activeGold,
                             backgroundColor: context.surfaceColor,
                             onSelected: (_) {
-                              setState(() {
-                                _selectedTopic = topic;
-                                _showSettings = false;
-                              });
+                              glintNotifier.setTopic(topic);
+                              setState(() => _showSettings = false);
                             },
                           );
                         }).toList(),
@@ -130,46 +159,118 @@ class _GlintScreenState extends State<GlintScreen> {
                 ),
               ],
 
-              // Shorts Feed List
+              // Dynamic Vertical Shorts Cards Feed
               Expanded(
                 child: PageView.builder(
                   scrollDirection: Axis.vertical,
-                  itemCount: _glints.length,
+                  itemCount: glintState.cards.length,
                   itemBuilder: (context, index) {
-                    final item = _glints[index];
-                    final color = item['color'] as Color;
+                    final item = glintState.cards[index];
+                    final color = _resolveAccentColor(item.accent);
+                    final icon = _resolveIcon(item.type);
 
                     return Container(
                       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                       child: GlassContainer(
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(22),
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Center(
-                              child: Container(
-                                padding: const EdgeInsets.all(24),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: color.withValues(alpha: 0.15),
-                                  border: Border.all(color: color, width: 2),
+                            // Top Tag & Bookmark
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: color.withValues(alpha: 0.18),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: color.withValues(alpha: 0.3)),
+                                  ),
+                                  child: Text(
+                                    item.tag.toUpperCase(),
+                                    style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                                  ),
                                 ),
-                                child: Icon(item['icon'] as IconData, color: color, size: 54),
-                              ),
+                                IconButton(
+                                  icon: Icon(
+                                    item.isFavorite ? LucideIcons.bookmarkCheck : LucideIcons.bookmark,
+                                    color: item.isFavorite ? activeGold : mutedTextColor,
+                                    size: 20,
+                                  ),
+                                  onPressed: () {
+                                    glintNotifier.toggleFavorite(item.id);
+                                    VinRToast.show(
+                                      context,
+                                      message: item.isFavorite ? 'Removed from saved' : 'Saved to Glint collection',
+                                      icon: LucideIcons.bookmarkCheck,
+                                      iconColor: activeGold,
+                                    );
+                                  },
+                                ),
+                              ],
                             ),
                             const Spacer(),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: color.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(12),
+
+                            // Center Orb Icon
+                            Center(
+                              child: Container(
+                                padding: const EdgeInsets.all(22),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: color.withValues(alpha: 0.12),
+                                  border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: color.withValues(alpha: 0.18),
+                                      blurRadius: 24,
+                                      spreadRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(icon, color: color, size: 48),
                               ),
-                              child: Text(item['tag'] as String, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
+                            ),
+
+                            const Spacer(),
+
+                            // Title
+                            Text(
+                              item.title,
+                              style: VinRTypography.h2.copyWith(color: primaryTextColor, fontSize: 22, height: 1.25),
                             ),
                             const SizedBox(height: 8),
-                            Text(item['title'] as String, style: VinRTypography.h3.copyWith(color: primaryTextColor)),
-                            const SizedBox(height: 12),
+
+                            // Body description
+                            Text(
+                              item.body,
+                              style: VinRTypography.body.copyWith(color: mutedTextColor, height: 1.45),
+                            ),
+
+                            if (item.quote != null && item.quote!.isNotEmpty) ...[
+                              const SizedBox(height: 14),
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: color.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border(left: BorderSide(color: color, width: 3)),
+                                ),
+                                child: Text(
+                                  '“${item.quote}”\n— ${item.author ?? "VinR"}',
+                                  style: TextStyle(
+                                    color: primaryTextColor,
+                                    fontSize: 13,
+                                    fontStyle: FontStyle.italic,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ),
+                            ],
+
+                            const SizedBox(height: 16),
+
+                            // Footer channel & audio indicator
                             Row(
                               children: [
                                 Container(
@@ -178,12 +279,18 @@ class _GlintScreenState extends State<GlintScreen> {
                                     color: activeGold.withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: Text(item['channel'] as String, style: TextStyle(color: activeGold, fontSize: 12, fontWeight: FontWeight.bold)),
+                                  child: Text(
+                                    item.channel,
+                                    style: TextStyle(color: activeGold, fontSize: 11, fontWeight: FontWeight.bold),
+                                  ),
                                 ),
                                 const SizedBox(width: 12),
-                                Icon(LucideIcons.music, color: mutedTextColor, size: 14),
+                                Icon(LucideIcons.sparkles, color: mutedTextColor, size: 13),
                                 const SizedBox(width: 4),
-                                Text('Original Audio', style: TextStyle(color: mutedTextColor, fontSize: 12)),
+                                Text(
+                                  'On-Device AI',
+                                  style: TextStyle(color: mutedTextColor, fontSize: 11),
+                                ),
                               ],
                             ),
                           ],
