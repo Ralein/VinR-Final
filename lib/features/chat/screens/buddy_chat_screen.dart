@@ -243,12 +243,15 @@ class _BuddyChatScreenState extends ConsumerState<BuddyChatScreen>
         ? _recognizedText.trim()
         : _messageController.text.trim();
 
-    final finalText = spokenText.isNotEmpty ? spokenText : 'Voice reflection (${_recordingSeconds > 0 ? _recordingSeconds : 1}s)';
+    final finalText = spokenText.isNotEmpty
+        ? spokenText
+        : 'I want to check in on my daily focus and motivation today.';
 
     ref.read(chatProvider.notifier).sendMessage(
           finalText,
           isVoice: true,
         );
+
 
     _messageController.clear();
     setState(() {
@@ -734,9 +737,10 @@ class _BuddyChatScreenState extends ConsumerState<BuddyChatScreen>
             child: GestureDetector(
               onTap: () {
                 notifier.setPersona(p.name);
-                notifier.sendMessage('Switched to ${p.name}. How can I help you today?');
+                notifier.addSystemNotification('Switched companion persona to ${p.name}');
                 _scrollToBottom();
               },
+
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -953,7 +957,7 @@ class _BuddyChatScreenState extends ConsumerState<BuddyChatScreen>
                           ),
                         ],
 
-                        // Timestamp + checkmarks
+                        // Timestamp + checkmarks + Audio Speaker
                         const SizedBox(height: 6),
                         Row(
                           mainAxisSize: MainAxisSize.min,
@@ -970,9 +974,34 @@ class _BuddyChatScreenState extends ConsumerState<BuddyChatScreen>
                             if (!isAi) ...[
                               const SizedBox(width: 4),
                               const Icon(LucideIcons.checkCheck, size: 12, color: Colors.white70),
+                            ] else ...[
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () => _toggleAudioPlayback(msg),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      isPlayingThis ? LucideIcons.pause : LucideIcons.volume2,
+                                      size: 13,
+                                      color: isPlayingThis ? activeGold : mutedTextColor,
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      isPlayingThis ? 'Listening' : 'Listen',
+                                      style: TextStyle(
+                                        color: isPlayingThis ? activeGold : mutedTextColor,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ],
                           ],
                         ),
+
                         ],
                       ),
                     ),

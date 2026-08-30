@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/ai/domain/ai_request.dart';
+import '../../../core/ai/infrastructure/voice/text_to_speech_service.dart';
 import '../../../core/repositories/chat_repository.dart';
 import '../models/chat_message_model.dart';
 
@@ -137,6 +138,10 @@ class ChatNotifier extends StateNotifier<ChatState> {
         isGenerating: false,
         clearStreamingText: true,
       );
+
+      if (isVoice) {
+        TextToSpeechService.instance.speak(aiMsg.text, personaId: state.persona);
+      }
     } catch (e) {
       final fallbackMsg = ChatMessageModel(
         id: 'ai_${DateTime.now().millisecondsSinceEpoch}',
@@ -150,9 +155,14 @@ class ChatNotifier extends StateNotifier<ChatState> {
         isGenerating: false,
         clearStreamingText: true,
       );
+
+      if (isVoice) {
+        TextToSpeechService.instance.speak(fallbackMsg.text, personaId: state.persona);
+      }
     } finally {
       _currentCancellation = null;
     }
+
   }
 
   /// Cancels in-progress AI generation immediately.
