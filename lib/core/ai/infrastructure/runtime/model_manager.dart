@@ -202,8 +202,11 @@ class ModelManager {
     }
 
     if (!_metadata.isInstalled) {
-      final installed = await downloadAndInstallModel();
-      if (!installed) return false;
+      final exists = await checkModelStatus();
+      if (!exists) {
+        final installed = await downloadAndInstallModel();
+        if (!installed) return false;
+      }
     }
 
     _setState(ModelState.loading);
@@ -219,6 +222,7 @@ class ModelManager {
       return false;
     }
   }
+
 
   /// Safely unloads model from RAM after prolonged inactivity or memory pressure.
   Future<void> unloadModel({LocalLlmRuntime? runtime}) async {
