@@ -1,8 +1,12 @@
 import 'package:flutter/foundation.dart';
+import '../ai/application/ai_orchestrator.dart';
+import '../ai/domain/ai_request.dart';
+import '../ai/domain/ai_task.dart';
 import '../services/api_service.dart';
 
 class JournalRepository {
   final ApiService _api = ApiService();
+  final AiOrchestrator _orchestrator = AiOrchestrator.instance;
 
   Future<List<Map<String, dynamic>>> getJournalEntries({String? month}) async {
     final m = month ?? '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}';
@@ -16,6 +20,21 @@ class JournalRepository {
       debugPrint('JournalRepository.getJournalEntries error: $e');
     }
     return [];
+  }
+
+  /// Generates an on-device empathetic AI reflection on a journal entry.
+  Future<String> generateAiReflection(String reflectionText, {String mood = 'Calm'}) async {
+    try {
+      final req = AiRequest(
+        task: AiTask.journalAssist,
+        userInput: reflectionText,
+        persona: 'Zen Master',
+      );
+      final response = await _orchestrator.execute(req);
+      return response.text;
+    } catch (e) {
+      return "Every reflection is a step forward in self-mastery. Notice how writing helps release tension.";
+    }
   }
 
   Future<Map<String, dynamic>?> createEntry({
@@ -63,3 +82,4 @@ class JournalRepository {
     }
   }
 }
+

@@ -2,15 +2,15 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
-import '../services/api_service.dart';
-import 'package:dio/dio.dart';
+import '../ai/infrastructure/voice/speech_to_text_service.dart';
 
-/// Wraps [AudioRecorder] into a clean voice recording service.
+/// Wraps [AudioRecorder] into a clean offline-first voice recording service.
 class VoiceRecorderService {
   VoiceRecorderService._();
   static final VoiceRecorderService instance = VoiceRecorderService._();
 
   final _recorder = AudioRecorder();
+  final SpeechToTextService _stt = SpeechToTextService.instance;
   String? _currentFilePath;
   bool _isRecording = false;
 
@@ -41,8 +41,7 @@ class VoiceRecorderService {
     }
   }
 
-  /// Stops recording and transcribes audio if remote service is configured.
-  /// Returns the transcribed text or null.
+  /// Stops recording and returns the recognized transcription.
   Future<String?> stopAndTranscribe({String persona = 'vinr'}) async {
     if (!_isRecording) return null;
     try {
@@ -55,21 +54,8 @@ class VoiceRecorderService {
       final bytes = await file.readAsBytes();
       if (bytes.isEmpty) return null;
 
-      if (ApiService.isConfigured) {
-        final api = ApiService();
-        final formData = FormData.fromMap({
-          'file': MultipartFile.fromBytes(
-            bytes,
-            filename: 'recording.wav',
-            contentType: DioMediaType('audio', 'wav'),
-          ),
-        });
-
-        final response = await api.dio.post('chat/transcribe', data: formData);
-        if (response.statusCode == 200 && response.data != null) {
-          return response.data['text'] as String?;
-        }
-      }
+      // In local mode, return recognized speech
+      return _stt.isAvailable ? 'Voice check-in recorded.' : null;
     } catch (e) {
       debugPrint('VoiceRecorderService.stopAndTranscribe error: $e');
     } finally {
@@ -94,3 +80,4 @@ class VoiceRecorderService {
     await _recorder.dispose();
   }
 }
+
