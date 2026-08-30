@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/ai/application/memory_service.dart';
+import '../../../core/ai/domain/ai_memory.dart';
 import '../../../core/repositories/streak_repository.dart';
 import '../models/streak_model.dart';
+
 
 class StreakNotifier extends StateNotifier<StreakStateModel> {
   final StreakRepository _repository = StreakRepository();
@@ -64,6 +67,16 @@ class StreakNotifier extends StateNotifier<StreakStateModel> {
       isWinner: isWinner,
     );
 
+    // Save habit milestone to on-device memory
+    try {
+      final memoryService = MemoryService.instance;
+      memoryService.remember(
+        category: AiMemoryCategory.habits,
+        key: 'streak_progress',
+        value: 'Completed Day $nextDay of 21-day winning streak',
+      );
+    } catch (_) {}
+
     if (_activeStreakId != null) {
       await _repository.completeDay(
         _activeStreakId!,
@@ -72,6 +85,7 @@ class StreakNotifier extends StateNotifier<StreakStateModel> {
       );
     }
   }
+
 
   void checkInToday() {
     if (!state.isCompletedToday) {

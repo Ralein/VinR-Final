@@ -91,6 +91,10 @@ class _JournalScreenState extends ConsumerState<JournalScreen> {
     }
 
     final items = [if (g1.isNotEmpty) g1, if (g2.isNotEmpty) g2, if (g3.isNotEmpty) g3];
+    final aiReflection = await _journalRepo.generateAiReflection(
+      note.isNotEmpty ? note : items.join(', '),
+      mood: 'Balanced',
+    );
 
     final tempEntry = {
       'id': 'entry_${DateTime.now().millisecondsSinceEpoch}',
@@ -98,24 +102,27 @@ class _JournalScreenState extends ConsumerState<JournalScreen> {
       'items': items.isNotEmpty ? items : ['Logged personal reflection'],
       'note': note.isNotEmpty ? note : 'Reflected on personal growth and daily wins.',
       'tags': ['Daily Gratitude'],
-      'aiReflection': 'Gratitude entry saved! Building daily self-reflection strengthens emotional resilience and focus.',
+      'aiReflection': aiReflection,
     };
 
-    setState(() {
-      _savedEntries.insert(0, tempEntry);
-      _g1Controller.clear();
-      _g2Controller.clear();
-      _g3Controller.clear();
-      _reflectionController.clear();
-      _viewMode = 'entries';
-    });
+    if (mounted) {
+      setState(() {
+        _savedEntries.insert(0, tempEntry);
+        _g1Controller.clear();
+        _g2Controller.clear();
+        _g3Controller.clear();
+        _reflectionController.clear();
+        _viewMode = 'entries';
+      });
 
-    VinRToast.show(
-      context,
-      message: 'Gratitude Entry Saved!',
-      icon: LucideIcons.checkCircle2,
-      iconColor: VinRColors.gold,
-    );
+      VinRToast.show(
+        context,
+        message: 'Gratitude Entry & AI Reflection Saved!',
+        icon: LucideIcons.sparkles,
+        iconColor: VinRColors.gold,
+      );
+    }
+
 
     final result = await _journalRepo.createEntry(
       gratitudeItems: items,
