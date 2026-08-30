@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:audioplayers/audioplayers.dart';
+import '../../../core/ai/infrastructure/voice/text_to_speech_service.dart';
 import '../../../core/theme/theme_context.dart';
 import '../../../core/theme/vinr_colors.dart';
 import '../../../core/theme/vinr_typography.dart';
@@ -69,11 +70,17 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
     _audioPlayer.onPlayerComplete.listen((_) {
       if (mounted) setState(() => _isPlayingQuoteAudio = false);
     });
+    TextToSpeechService.instance.playingStateStream.listen((isPlaying) {
+      if (!isPlaying && mounted && _isPlayingQuoteAudio) {
+        setState(() => _isPlayingQuoteAudio = false);
+      }
+    });
   }
 
   @override
   void dispose() {
     _audioPlayer.dispose();
+    TextToSpeechService.instance.stop();
     super.dispose();
   }
 
@@ -91,53 +98,49 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
 
   Future<void> _toggleQuoteAudio() async {
     if (_isPlayingQuoteAudio) {
+      await TextToSpeechService.instance.stop();
       await _audioPlayer.stop();
       if (mounted) setState(() => _isPlayingQuoteAudio = false);
     } else {
-      VinRToast.show(
-        context,
-        message: 'Synthesizing audio reflection...',
-        icon: LucideIcons.loader,
-        iconColor: VinRColors.gold,
-      );
-
       final currentQuoteObj = _stoicQuotes[_quoteIndex];
       final textToSynthesize = "${currentQuoteObj['quote']} — ${currentQuoteObj['author']}";
 
-      final audioUrl = await _chatRepo.generateTts(textToSynthesize, persona: 'stoic');
-      if (audioUrl != null && audioUrl.isNotEmpty) {
-        try {
-          if (audioUrl.startsWith('data:')) {
-            final base64Str = audioUrl.split(',').last;
-            final bytes = base64Decode(base64Str);
-            await _audioPlayer.play(BytesSource(bytes));
-          } else {
-            await _audioPlayer.play(UrlSource(audioUrl));
+      setState(() => _isPlayingQuoteAudio = true);
+
+      VinRToast.show(
+        context,
+        message: 'Playing Stoic audio reflection',
+        icon: LucideIcons.volume2,
+        iconColor: VinRColors.gold,
+      );
+
+      final spoke = await TextToSpeechService.instance.speak(
+        textToSynthesize,
+        personaId: 'stoic',
+      );
+
+      if (!spoke) {
+        final audioUrl = await _chatRepo.generateTts(textToSynthesize, persona: 'stoic');
+        if (audioUrl != null && audioUrl.isNotEmpty) {
+          try {
+            if (audioUrl.startsWith('data:')) {
+              final base64Str = audioUrl.split(',').last;
+              final bytes = base64Decode(base64Str);
+              await _audioPlayer.play(BytesSource(bytes));
+            } else {
+              await _audioPlayer.play(UrlSource(audioUrl));
+            }
+          } catch (e) {
+            debugPrint('Dashboard audio error: $e');
+            if (mounted) setState(() => _isPlayingQuoteAudio = false);
           }
-          if (mounted) {
-            setState(() => _isPlayingQuoteAudio = true);
-            VinRToast.show(
-              context,
-              message: 'Playing daily audio reflection',
-              icon: LucideIcons.volume2,
-              iconColor: VinRColors.gold,
-            );
-          }
-        } catch (e) {
-          debugPrint('Dashboard audio error: $e');
-        }
-      } else {
-        if (mounted) {
-          VinRToast.show(
-            context,
-            message: 'Audio reflection ready',
-            icon: LucideIcons.volume2,
-            iconColor: VinRColors.gold,
-          );
+        } else {
+          if (mounted) setState(() => _isPlayingQuoteAudio = false);
         }
       }
     }
   }
+
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
