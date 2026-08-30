@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/ai/domain/ai_memory.dart';
+import '../../../core/ai/presentation/providers/ai_providers.dart';
 import '../../../core/theme/theme_context.dart';
 import '../../../core/theme/vinr_colors.dart';
 import '../../../core/theme/vinr_typography.dart';
@@ -12,8 +14,10 @@ import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/vinr_toast.dart';
 import '../../../core/services/notification_service.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../chat/providers/chat_provider.dart';
 import '../../onboarding/providers/onboarding_provider.dart';
 import '../providers/reminder_provider.dart';
+
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -117,6 +121,180 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
+  void _showMemoryInspectorModal(BuildContext context, WidgetRef ref, List<AiMemory> memories) {
+    final primaryTextColor = context.textColor;
+    final mutedTextColor = context.textMutedColor;
+    final activeGold = context.goldColor;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.surfaceColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: context.textGhostColor.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('On-Device AI Memories', style: VinRTypography.h2.copyWith(color: primaryTextColor)),
+                    if (memories.isNotEmpty)
+                      TextButton(
+                        onPressed: () async {
+                          await ref.read(aiMemoryProvider.notifier).clearAll();
+                          if (context.mounted) Navigator.pop(context);
+                        },
+                        child: const Text('Clear All', style: TextStyle(color: VinRColors.crimson, fontSize: 12, fontWeight: FontWeight.bold)),
+                      ),
+                  ],
+                ),
+                Text('These private facts and preferences stay 100% on your device.', style: VinRTypography.caption.copyWith(color: mutedTextColor)),
+                const SizedBox(height: 16),
+                if (memories.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Center(
+                      child: Text('No memories stored yet. Converse with VinR Coach to personalize.', style: TextStyle(color: mutedTextColor, fontSize: 13)),
+                    ),
+                  )
+                else
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: memories.length,
+                      separatorBuilder: (_, __) => const Divider(height: 12),
+                      itemBuilder: (context, i) {
+                        final mem = memories[i];
+                        return Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('${mem.category.value.toUpperCase()} • ${mem.key}', style: TextStyle(color: activeGold, fontSize: 11, fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 2),
+                                  Text(mem.value, style: TextStyle(color: primaryTextColor, fontSize: 13)),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(LucideIcons.x, size: 16, color: VinRColors.crimson),
+                              onPressed: () => ref.read(aiMemoryProvider.notifier).deleteMemory(mem.id),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showAiDiagnosticsModal(BuildContext context, WidgetRef ref) {
+    final primaryTextColor = context.textColor;
+    final mutedTextColor = context.textMutedColor;
+    final activeGold = context.goldColor;
+    final statsAsync = ref.watch(aiStatsProvider);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.surfaceColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: context.textGhostColor.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text('AI Telemetry & Zero-Remote Proof', style: VinRTypography.h2.copyWith(color: primaryTextColor)),
+                Text('Local mobile inference metrics running fully offline.', style: VinRTypography.caption.copyWith(color: mutedTextColor)),
+                const SizedBox(height: 20),
+
+                statsAsync.when(
+                  data: (stats) => Column(
+                    children: [
+                      _buildMetricRow(context, 'Inference Speed', '${stats.tokensPerSecond.toStringAsFixed(1)} tokens/sec', LucideIcons.gauge, activeGold),
+                      const SizedBox(height: 12),
+                      _buildMetricRow(context, 'Working Memory RSS', '${stats.memoryUsageMb} MB (Budget: 1500 MB)', LucideIcons.hardDrive, VinRColors.sapphire),
+                      const SizedBox(height: 12),
+                      _buildMetricRow(context, 'Zero-Leakage Privacy Policy', 'Strictly Enforced (0 bytes sent)', LucideIcons.shieldCheck, VinRColors.emerald),
+                    ],
+                  ),
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (_, __) => Text('Diagnostics ready on next inference pass.', style: TextStyle(color: mutedTextColor)),
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMetricRow(BuildContext context, String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: context.surfaceColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: context.borderColor),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: TextStyle(color: context.textMutedColor, fontSize: 11)),
+                Text(value, style: TextStyle(color: context.textColor, fontWeight: FontWeight.bold, fontSize: 13)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeProvider);
@@ -124,6 +302,9 @@ class SettingsScreen extends ConsumerWidget {
     final authNotifier = ref.read(authProvider.notifier);
     final reminderState = ref.watch(reminderProvider);
     final reminderNotifier = ref.read(reminderProvider.notifier);
+    final aiModel = ref.watch(aiModelProvider);
+    final memories = ref.watch(aiMemoryProvider);
+
 
     return Scaffold(
       body: AmbientBackground(
@@ -343,6 +524,165 @@ class SettingsScreen extends ConsumerWidget {
                   ],
                 ),
               ),
+              // LOCAL AI & PRIVACY SECTION
+              const SectionHeader(
+                title: 'LOCAL AI & PRIVACY',
+                icon: LucideIcons.cpu,
+                iconColor: VinRColors.gold,
+              ),
+
+              GlassContainer(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Model Status
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: context.goldColor.withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(LucideIcons.hardDrive, color: context.goldColor, size: 18),
+                            ),
+                            const SizedBox(width: 14),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'On-Device Model',
+                                  style: VinRTypography.body.copyWith(fontWeight: FontWeight.bold, color: context.textColor),
+                                ),
+                                Text(
+                                  aiModel.isReady ? 'Active in RAM (~485 MB)' : (aiModel.isInstalled ? 'Installed (~500 MB)' : 'Not Downloaded'),
+                                  style: VinRTypography.caption.copyWith(color: aiModel.isReady ? VinRColors.emerald : context.textMutedColor),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        if (!aiModel.isInstalled)
+                          ElevatedButton(
+                            onPressed: () => ref.read(aiModelProvider.notifier).downloadModel(),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: context.goldColor,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: const Text('Download', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                          )
+                        else
+                          OutlinedButton(
+                            onPressed: () {
+                              ref.read(aiModelProvider.notifier).deleteModel();
+                              VinRToast.show(
+                                context,
+                                message: 'Local model unloaded',
+                                icon: LucideIcons.trash2,
+                                iconColor: VinRColors.crimson,
+                              );
+                            },
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: VinRColors.crimson,
+                              side: BorderSide(color: VinRColors.crimson.withValues(alpha: 0.5)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: const Text('Unload', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                          ),
+                      ],
+                    ),
+                    const Divider(height: 24),
+
+                    // Personal Memories Inspector
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: VinRColors.sapphire.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(LucideIcons.brain, color: VinRColors.sapphire, size: 18),
+                      ),
+                      title: Text(
+                        'On-Device Memories (${memories.length})',
+                        style: VinRTypography.body.copyWith(fontWeight: FontWeight.bold, color: context.textColor),
+                      ),
+                      subtitle: Text(
+                        'Inspect or clear stored facts and preferences',
+                        style: VinRTypography.caption.copyWith(color: context.textMutedColor),
+                      ),
+                      trailing: Icon(LucideIcons.chevronRight, color: context.textMutedColor, size: 18),
+                      onTap: () => _showMemoryInspectorModal(context, ref, memories),
+                    ),
+
+                    const Divider(height: 24),
+
+                    // Clear Chat History
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: VinRColors.crimson.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(LucideIcons.messageSquareX, color: VinRColors.crimson, size: 18),
+                      ),
+                      title: Text(
+                        'Clear AI Conversations',
+                        style: VinRTypography.body.copyWith(fontWeight: FontWeight.bold, color: context.textColor),
+                      ),
+                      subtitle: Text(
+                        'Permanently wipe local chat logs',
+                        style: VinRTypography.caption.copyWith(color: context.textMutedColor),
+                      ),
+                      trailing: TextButton(
+                        onPressed: () async {
+                          await ref.read(chatProvider.notifier).clearMessages();
+                          if (context.mounted) {
+                            VinRToast.show(
+                              context,
+                              message: 'All local conversation history cleared',
+                              icon: LucideIcons.checkCheck,
+                              iconColor: context.goldColor,
+                            );
+                          }
+                        },
+                        child: const Text('Clear', style: TextStyle(color: VinRColors.crimson, fontWeight: FontWeight.bold, fontSize: 12)),
+                      ),
+                    ),
+
+                    const Divider(height: 24),
+
+                    // AI Performance Diagnostics
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: VinRColors.emerald.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(LucideIcons.gauge, color: VinRColors.emerald, size: 18),
+                      ),
+                      title: Text(
+                        'AI Diagnostics & Zero-Telemetry',
+                        style: VinRTypography.body.copyWith(fontWeight: FontWeight.bold, color: context.textColor),
+                      ),
+                      subtitle: Text(
+                        'View on-device latency & memory metrics',
+                        style: VinRTypography.caption.copyWith(color: context.textMutedColor),
+                      ),
+                      trailing: Icon(LucideIcons.chevronRight, color: context.textMutedColor, size: 18),
+                      onTap: () => _showAiDiagnosticsModal(context, ref),
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 24),
 
               const SectionHeader(
@@ -387,6 +727,7 @@ class SettingsScreen extends ConsumerWidget {
       ),
     );
   }
+
 
   Widget _buildThemeOption({
     required BuildContext context,

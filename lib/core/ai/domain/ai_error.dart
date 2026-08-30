@@ -11,61 +11,61 @@ abstract class AiError implements Exception {
 }
 
 class ModelMissingError extends AiError {
-  const ModelMissingError([String message = 'Local AI model file is not downloaded.'])
-      : super(message, code: 'MODEL_MISSING');
+  const ModelMissingError([super.message = 'Local AI model file is not downloaded.'])
+      : super(code: 'MODEL_MISSING');
 }
 
 class ModelCorruptError extends AiError {
-  const ModelCorruptError([String message = 'Model integrity checksum verification failed.'])
-      : super(message, code: 'MODEL_CORRUPT');
+  const ModelCorruptError([super.message = 'Model integrity checksum verification failed.'])
+      : super(code: 'MODEL_CORRUPT');
 }
 
 class ModelLoadFailedError extends AiError {
-  const ModelLoadFailedError([String message = 'Failed to load model weights into runtime.', dynamic details])
-      : super(message, code: 'MODEL_LOAD_FAILED', details: details);
+  const ModelLoadFailedError([super.message = 'Failed to load model weights into runtime.', super.details])
+      : super(code: 'MODEL_LOAD_FAILED');
 }
 
 class RuntimeUnavailableError extends AiError {
-  const RuntimeUnavailableError([String message = 'Inference runtime is currently unavailable.'])
-      : super(message, code: 'RUNTIME_UNAVAILABLE');
+  const RuntimeUnavailableError([super.message = 'Inference runtime is currently unavailable.'])
+      : super(code: 'RUNTIME_UNAVAILABLE');
 }
 
 class GenerationFailedError extends AiError {
-  const GenerationFailedError([String message = 'AI text generation failed.', dynamic details])
-      : super(message, code: 'GENERATION_FAILED', details: details);
+  const GenerationFailedError([super.message = 'AI text generation failed.', super.details])
+      : super(code: 'GENERATION_FAILED');
 }
 
 class GenerationCancelledError extends AiError {
-  const GenerationCancelledError([String message = 'Generation was cancelled by user or scheduler.'])
-      : super(message, code: 'GENERATION_CANCELLED');
+  const GenerationCancelledError([super.message = 'Generation was cancelled by user or scheduler.'])
+      : super(code: 'GENERATION_CANCELLED');
 }
 
 class ContextTooLargeError extends AiError {
-  const ContextTooLargeError([String message = 'Assembled context exceeds model maximum context window.'])
-      : super(message, code: 'CONTEXT_TOO_LARGE');
+  const ContextTooLargeError([super.message = 'Assembled context exceeds model maximum context window.'])
+      : super(code: 'CONTEXT_TOO_LARGE');
 }
 
 class InvalidStructuredOutputError extends AiError {
-  const InvalidStructuredOutputError([String message = 'Model output did not match expected JSON schema.', dynamic details])
-      : super(message, code: 'INVALID_STRUCTURED_OUTPUT', details: details);
+  const InvalidStructuredOutputError([super.message = 'Model output did not match expected JSON schema.', super.details])
+      : super(code: 'INVALID_STRUCTURED_OUTPUT');
 }
 
 class MemoryPressureError extends AiError {
-  const MemoryPressureError([String message = 'Operation aborted due to device memory pressure.'])
-      : super(message, code: 'MEMORY_PRESSURE');
+  const MemoryPressureError([super.message = 'Operation aborted due to device memory pressure.'])
+      : super(code: 'MEMORY_PRESSURE');
 }
 
 class PermissionDeniedError extends AiError {
-  const PermissionDeniedError([String message = 'Microphone or storage permission denied.'])
-      : super(message, code: 'PERMISSION_DENIED');
+  const PermissionDeniedError([super.message = 'Microphone or storage permission denied.'])
+      : super(code: 'PERMISSION_DENIED');
 }
 
 class VoiceUnavailableError extends AiError {
-  const VoiceUnavailableError([String message = 'Speech-to-text or TTS service is unavailable.'])
-      : super(message, code: 'VOICE_UNAVAILABLE');
+  const VoiceUnavailableError([super.message = 'Speech-to-text or TTS service is unavailable.'])
+      : super(code: 'VOICE_UNAVAILABLE');
 }
 
 class UnknownAiError extends AiError {
-  const UnknownAiError([String message = 'An unexpected AI subsystem error occurred.', dynamic details])
-      : super(message, code: 'UNKNOWN_AI_ERROR', details: details);
+  const UnknownAiError([super.message = 'An unexpected AI subsystem error occurred.', super.details])
+      : super(code: 'UNKNOWN_AI_ERROR');
 }
