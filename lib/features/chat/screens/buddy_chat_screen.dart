@@ -1332,6 +1332,8 @@ class _BuddyChatScreenState extends ConsumerState<BuddyChatScreen>
               style: TextStyle(color: primaryTextColor, fontSize: 15),
               maxLines: 4,
               minLines: 1,
+              textInputAction: TextInputAction.send,
+              onSubmitted: (_) => _send(),
               decoration: InputDecoration(
                 hintText: 'Share what\'s on your mind...',
                 hintStyle: TextStyle(color: mutedTextColor, fontSize: 14),
@@ -1352,30 +1354,34 @@ class _BuddyChatScreenState extends ConsumerState<BuddyChatScreen>
                   borderSide: BorderSide(color: activeGold, width: 1.5),
                 ),
               ),
-              onSubmitted: (_) => _send(),
             ),
           ),
           const SizedBox(width: 10),
 
-          // Send button — gradient gold orb
-          GestureDetector(
-            onTap: _send,
-            child: Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: VinRColors.goldGradient,
-                boxShadow: [
-                  BoxShadow(
-                    color: activeGold.withValues(alpha: 0.4),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: const Center(
-                child: Icon(LucideIcons.send, color: Colors.white, size: 18),
+          // Send button — gradient gold orb with responsive touch handling
+          Material(
+            color: Colors.transparent,
+            shape: const CircleBorder(),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: _send,
+              child: Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: VinRColors.goldGradient,
+                  boxShadow: [
+                    BoxShadow(
+                      color: activeGold.withValues(alpha: 0.4),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Center(
+                  child: Icon(LucideIcons.send, color: Colors.white, size: 18),
+                ),
               ),
             ),
           ),
@@ -1383,6 +1389,7 @@ class _BuddyChatScreenState extends ConsumerState<BuddyChatScreen>
       ),
     );
   }
+
 
   Widget _buildRecordingBar(
     BuildContext context,
