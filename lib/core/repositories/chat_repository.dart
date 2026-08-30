@@ -1,91 +1,138 @@
-import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
-import '../services/api_service.dart';
-import '../services/local_ai_service.dart';
+import '../ai/application/ai_orchestrator.dart';
+import '../ai/application/context_builder.dart';
+import '../ai/application/memory_service.dart';
+import '../ai/domain/ai_message.dart';
+import '../ai/domain/ai_request.dart';
+import '../ai/domain/ai_response.dart';
+import '../ai/domain/ai_task.dart';
+import '../ai/infrastructure/storage/conversation_store.dart';
 
+/// Repository managing chat messages, streaming tokens, and local offline persistence.
 class ChatRepository {
-  final ApiService _apiService = ApiService();
-  final LocalAIService _localAiService = LocalAIService.instance;
+  final AiOrchestrator _orchestrator = AiOrchestrator.instance;
+  final ConversationStore _store = ConversationStore();
+  final MemoryService _memoryService = MemoryService.instance;
 
+  /// Streams tokens from local model runtime while auto-recording to conversation store on completion.
+  Stream<AiToken> streamMessage(
+    String text, {
+    String persona = 'VinR Coach',
+    String conversationId = 'default_conversation',
+    int? streakDays,
+    String? currentMood,
+    AiCancellationToken? cancellationToken,
+  }) async* {
+    // 1. Load history & memories for context assembly
+    final history = await _store.getMessages(conversationId);
+    final memories = await _memoryService.getMemories();
+
+    final userMessage = AiMessage.user(
+      content: text,
+      conversationId: conversationId,
+    );
+    await _store.saveMessage(userMessage);
+
+    // 2. Extract durable personal memory candidates
+    await _memoryService.extractFromInput(text);
+
+    // 3. Build token-budgeted prompt context
+    final context = ContextBuilder.build(
+      currentScreen: 'BuddyChatScreen',
+      streakDays: streakDays ?? 5,
+      currentMood: currentMood,
+      persona: persona,
+      fullHistory: history,
+      availableMemories: memories,
+    );
+
+    final request = AiRequest(
+      task: AiTask.conversation,
+      userInput: text,
+      conversationId: conversationId,
+      persona: persona,
+      context: context,
+      cancellationToken: cancellationToken,
+    );
+
+    final fullResponseBuffer = StringBuffer();
+    final stream = _orchestrator.stream(request);
+
+    await for (final token in stream) {
+      fullResponseBuffer.write(token.text);
+      yield token;
+      if (token.isFinished) break;
+    }
+
+    // 4. Atomic final persistence write
+    final assistantMessage = AiMessage.assistant(
+      content: fullResponseBuffer.toString().trim(),
+      conversationId: conversationId,
+      persona: persona,
+    );
+    await _store.saveMessage(assistantMessage);
+  }
+
+  /// Sends a message and returns legacy-compatible response structure.
   Future<Map<String, dynamic>?> sendMessage(
     String text, {
     bool voiceEnabled = false,
-    String persona = 'vinr',
+    String persona = 'VinR Coach',
+    String conversationId = 'default_conversation',
   }) async {
-    try {
-      if (ApiService.isConfigured) {
-        final response = await _apiService.dio.post(
-          'chat/message',
-          data: {
-            'text': text,
-            'voice_enabled': voiceEnabled,
-            'persona': persona,
-          },
-        );
-        if (response.statusCode == 200 && response.data != null) {
-          return response.data as Map<String, dynamic>;
-        }
-      }
-    } on DioException catch (e) {
-      debugPrint('ChatRepository remote send error: ${e.message}');
-    } catch (e) {
-      debugPrint('ChatRepository remote send error: $e');
-    }
+    final history = await _store.getMessages(conversationId);
+    final memories = await _memoryService.getMemories();
 
-    // Local AI fallback abstraction for offline-first architecture
-    final aiReply = await _localAiService.generateResponse(
-      prompt: text,
+    final userMessage = AiMessage.user(
+      content: text,
+      conversationId: conversationId,
+    );
+    await _store.saveMessage(userMessage);
+    await _memoryService.extractFromInput(text);
+
+    final context = ContextBuilder.build(
+      currentScreen: 'BuddyChatScreen',
       persona: persona,
+      fullHistory: history,
+      availableMemories: memories,
     );
 
+    final request = AiRequest(
+      task: voiceEnabled ? AiTask.voiceResponse : AiTask.conversation,
+      userInput: text,
+      conversationId: conversationId,
+      persona: persona,
+      context: context,
+    );
+
+    final response = await _orchestrator.execute(request);
+
+    final assistantMessage = AiMessage.assistant(
+      content: response.text,
+      conversationId: conversationId,
+      persona: persona,
+    );
+    await _store.saveMessage(assistantMessage);
+
     return {
-      'user_message': {
-        'id': 'msg_usr_${DateTime.now().millisecondsSinceEpoch}',
-        'role': 'user',
-        'content': text,
-        'created_at': DateTime.now().toIso8601String(),
-      },
-      'buddy_message': {
-        'id': 'msg_ai_${DateTime.now().millisecondsSinceEpoch}',
-        'role': 'assistant',
-        'content': aiReply,
-        'persona': persona,
-        'created_at': DateTime.now().toIso8601String(),
-      }
+      'user_message': userMessage.toJson(),
+      'buddy_message': assistantMessage.toJson(),
     };
   }
 
-  Future<List<dynamic>?> getHistory() async {
-    try {
-      if (ApiService.isConfigured) {
-        final response = await _apiService.dio.get('chat/history');
-        if (response.statusCode == 200 && response.data != null) {
-          return response.data['messages'] as List<dynamic>?;
-        }
-      }
-    } catch (e) {
-      debugPrint('ChatRepository getHistory error: $e');
-    }
-    return [];
+  /// Loads local on-device message history.
+  Future<List<dynamic>?> getHistory([String conversationId = 'default_conversation']) async {
+    final list = await _store.getMessages(conversationId);
+    return list.map((m) => m.toJson()).toList();
   }
 
-  Future<String?> generateTts(String text, {String persona = 'vinr'}) async {
-    try {
-      if (ApiService.isConfigured) {
-        final response = await _apiService.dio.post(
-          'chat/tts',
-          data: {
-            'text': text,
-            'persona': persona,
-          },
-        );
-        if (response.statusCode == 200 && response.data != null) {
-          return response.data['audio_url'] as String?;
-        }
-      }
-    } catch (e) {
-      debugPrint('ChatRepository generateTts error: $e');
-    }
+  /// Generates local speech synthesis or simulated TTS audio.
+  Future<String?> generateTts(String text, {String persona = 'VinR Coach'}) async {
     return null;
   }
+
+  /// Clears stored chat history.
+  Future<void> clearHistory([String conversationId = 'default_conversation']) async {
+    await _store.deleteConversation(conversationId);
+  }
 }
+
