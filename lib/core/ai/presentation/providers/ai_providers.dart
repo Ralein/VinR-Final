@@ -17,7 +17,7 @@ class AiModelState {
   const AiModelState({
     required this.state,
     this.progress = 0.0,
-    this.isInstalled = true,
+    this.isInstalled = false,
     this.modelName = 'VinR Compact Growth Intelligence v1',
     this.modelSizeBytes = 524288000,
     this.errorMessage,
@@ -25,6 +25,8 @@ class AiModelState {
 
   bool get isReady => state == ModelState.ready || state == ModelState.busy;
   bool get isDownloading => state == ModelState.downloading;
+  bool get isVerifying => state == ModelState.verifying;
+  bool get isLoading => state == ModelState.loading;
 }
 
 class AiModelNotifier extends StateNotifier<AiModelState> {
@@ -36,13 +38,19 @@ class AiModelNotifier extends StateNotifier<AiModelState> {
             state: ModelManager.instance.state,
             progress: ModelManager.instance.downloadProgress,
             isInstalled: ModelManager.instance.isModelInstalled,
+            modelSizeBytes: ModelManager.instance.metadata.sizeBytes,
           ),
         ) {
+    _init();
+  }
+
+  Future<void> _init() async {
     _manager.stateStream.listen((state) {
       this.state = AiModelState(
         state: state,
         progress: _manager.downloadProgress,
         isInstalled: _manager.isModelInstalled,
+        modelSizeBytes: _manager.metadata.sizeBytes,
         errorMessage: _manager.errorMessage,
       );
     });
@@ -52,9 +60,16 @@ class AiModelNotifier extends StateNotifier<AiModelState> {
         state: _manager.state,
         progress: progress,
         isInstalled: _manager.isModelInstalled,
+        modelSizeBytes: _manager.metadata.sizeBytes,
         errorMessage: _manager.errorMessage,
       );
     });
+
+    await _manager.checkModelStatus();
+  }
+
+  Future<void> checkStatus() async {
+    await _manager.checkModelStatus();
   }
 
   Future<void> downloadModel() async {

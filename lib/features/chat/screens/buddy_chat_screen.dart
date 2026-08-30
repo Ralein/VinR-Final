@@ -7,9 +7,12 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import '../../../core/ai/infrastructure/voice/speech_to_text_service.dart';
+import '../../../core/ai/infrastructure/voice/text_to_speech_service.dart';
 import '../../../core/theme/theme_context.dart';
 import '../../../core/theme/vinr_colors.dart';
 import '../../../core/theme/vinr_typography.dart';
+
 import '../../../core/widgets/ambient_background.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/audio_waveform_visualizer.dart';

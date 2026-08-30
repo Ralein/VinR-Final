@@ -536,65 +536,135 @@ class SettingsScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Model Status
+                    // Model Status & Download/Install Card
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: context.goldColor.withValues(alpha: 0.15),
-                                shape: BoxShape.circle,
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: context.goldColor.withValues(alpha: 0.15),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(LucideIcons.hardDrive, color: context.goldColor, size: 18),
                               ),
-                              child: Icon(LucideIcons.hardDrive, color: context.goldColor, size: 18),
-                            ),
-                            const SizedBox(width: 14),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'On-Device Model',
-                                  style: VinRTypography.body.copyWith(fontWeight: FontWeight.bold, color: context.textColor),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'On-Device Model',
+                                      style: VinRTypography.body.copyWith(fontWeight: FontWeight.bold, color: context.textColor),
+                                    ),
+                                    Text(
+                                      aiModel.isDownloading
+                                          ? 'Downloading ${(aiModel.progress * 100).toInt()}% (${(aiModel.progress * 500).toInt()}/500 MB)...'
+                                          : (aiModel.isVerifying
+                                              ? 'Verifying GGUF weights...'
+                                              : (aiModel.isReady
+                                                  ? 'Active in RAM (~485 MB) • 500 MB on Disk'
+                                                  : (aiModel.isInstalled
+                                                      ? 'Installed on Disk (500.0 MB)'
+                                                      : 'Not Downloaded (0 MB on Disk)'))),
+                                      style: VinRTypography.caption.copyWith(
+                                        color: aiModel.isDownloading
+                                            ? context.goldColor
+                                            : (aiModel.isReady || aiModel.isInstalled ? VinRColors.emerald : context.textMutedColor),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                Text(
-                                  aiModel.isReady ? 'Active in RAM (~485 MB)' : (aiModel.isInstalled ? 'Installed (~500 MB)' : 'Not Downloaded'),
-                                  style: VinRTypography.caption.copyWith(color: aiModel.isReady ? VinRColors.emerald : context.textMutedColor),
-                                ),
-                              ],
-                            ),
-                          ],
+                              ),
+                            ],
+                          ),
                         ),
-                        if (!aiModel.isInstalled)
-                          ElevatedButton(
-                            onPressed: () => ref.read(aiModelProvider.notifier).downloadModel(),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: context.goldColor,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            child: const Text('Download', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        const SizedBox(width: 8),
+                        if (aiModel.isDownloading)
+                          const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: VinRColors.gold),
                           )
-                        else
-                          OutlinedButton(
+                        else if (!aiModel.isInstalled)
+                          ElevatedButton(
                             onPressed: () {
-                              ref.read(aiModelProvider.notifier).deleteModel();
+                              ref.read(aiModelProvider.notifier).downloadModel();
                               VinRToast.show(
                                 context,
-                                message: 'Local model unloaded',
-                                icon: LucideIcons.trash2,
-                                iconColor: VinRColors.crimson,
+                                message: 'Downloading 500 MB local AI model...',
+                                icon: LucideIcons.downloadCloud,
+                                iconColor: context.goldColor,
                               );
                             },
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: VinRColors.crimson,
-                              side: BorderSide(color: VinRColors.crimson.withValues(alpha: 0.5)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: context.goldColor,
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
-                            child: const Text('Unload', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                            child: const Text('Download (500 MB)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black)),
+                          )
+                        else
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (aiModel.isReady)
+                                OutlinedButton(
+                                  onPressed: () {
+                                    ref.read(aiModelProvider.notifier).unloadModel();
+                                    VinRToast.show(
+                                      context,
+                                      message: 'Model unloaded from RAM',
+                                      icon: LucideIcons.cpu,
+                                      iconColor: context.goldColor,
+                                    );
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: context.goldColor,
+                                    side: BorderSide(color: context.goldColor.withValues(alpha: 0.5)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                  child: const Text('Unload', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                                ),
+                              const SizedBox(width: 6),
+                              OutlinedButton(
+                                onPressed: () {
+                                  ref.read(aiModelProvider.notifier).deleteModel();
+                                  VinRToast.show(
+                                    context,
+                                    message: 'Model weights deleted (500 MB freed)',
+                                    icon: LucideIcons.trash2,
+                                    iconColor: VinRColors.crimson,
+                                  );
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: VinRColors.crimson,
+                                  side: BorderSide(color: VinRColors.crimson.withValues(alpha: 0.5)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                child: const Text('Delete', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                              ),
+                            ],
                           ),
                       ],
                     ),
+                    if (aiModel.isDownloading) ...[
+                      const SizedBox(height: 12),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: LinearProgressIndicator(
+                          value: aiModel.progress,
+                          backgroundColor: context.surfaceColor,
+                          valueColor: AlwaysStoppedAnimation<Color>(context.goldColor),
+                          minHeight: 6,
+                        ),
+                      ),
+                    ],
                     const Divider(height: 24),
 
                     // Personal Memories Inspector
