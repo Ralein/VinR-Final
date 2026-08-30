@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/ai/domain/ai_request.dart';
 import '../../../core/repositories/chat_repository.dart';
 import '../models/chat_message_model.dart';
 
@@ -6,38 +8,44 @@ class ChatState {
   final List<ChatMessageModel> messages;
   final String persona;
   final bool isGenerating;
+  final String? streamingText;
 
   ChatState({
     this.messages = const [],
-    this.persona = 'VinR Growth Partner',
+    this.persona = 'VinR Coach',
     this.isGenerating = false,
+    this.streamingText,
   });
 
   ChatState copyWith({
     List<ChatMessageModel>? messages,
     String? persona,
     bool? isGenerating,
+    String? streamingText,
+    bool clearStreamingText = false,
   }) {
     return ChatState(
       messages: messages ?? this.messages,
       persona: persona ?? this.persona,
       isGenerating: isGenerating ?? this.isGenerating,
+      streamingText: clearStreamingText ? null : (streamingText ?? this.streamingText),
     );
   }
 }
 
 class ChatNotifier extends StateNotifier<ChatState> {
   final ChatRepository _repository = ChatRepository();
+  AiCancellationToken? _currentCancellation;
 
   ChatNotifier()
       : super(
           ChatState(
             messages: [
               ChatMessageModel(
-                id: 'm1',
-                text: "Welcome back champion! I'm VinR, your growth partner. How are you feeling right now on Day 5 of your winning streak?",
+                id: 'm_welcome',
+                text: "Welcome back champion! I'm VinR, your private growth partner. Ready to strengthen Day 5 of your winning streak?",
                 sender: MessageSender.ai,
-                timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
+                timestamp: DateTime.now().subtract(const Duration(minutes: 2)),
               ),
             ],
           ),
@@ -55,7 +63,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
           text: item['content'] as String? ?? '',
           sender: role == 'user' ? MessageSender.user : MessageSender.ai,
           timestamp: DateTime.tryParse(item['created_at'] as String? ?? '') ?? DateTime.now(),
-          audioUri: item['audio_url'] as String?,
+          audioUri: (item['metadata'] as Map?)?['audio_url'] as String?,
         );
       }).toList();
 
@@ -69,9 +77,14 @@ class ChatNotifier extends StateNotifier<ChatState> {
     state = state.copyWith(persona: persona);
   }
 
+  /// Sends a message and streams the assistant response token-by-token.
   Future<void> sendMessage(String text, {bool isVoice = false}) async {
+    if (state.isGenerating) {
+      cancelGeneration();
+    }
+
     final userMsg = ChatMessageModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: 'usr_${DateTime.now().millisecondsSinceEpoch}',
       text: text,
       sender: MessageSender.user,
       timestamp: DateTime.now(),
@@ -81,61 +94,107 @@ class ChatNotifier extends StateNotifier<ChatState> {
     state = state.copyWith(
       messages: [...state.messages, userMsg],
       isGenerating: true,
+      streamingText: '',
     );
 
-    final lowerP = state.persona.toLowerCase();
-    final personaId = (lowerP.contains('listener') || lowerP.contains('hope'))
-        ? 'listener'
-        : (lowerP.contains('stoic') || lowerP.contains('sage'))
-            ? 'stoic'
-            : 'coach';
+    _currentCancellation = AiCancellationToken();
 
-    final response = await _repository.sendMessage(
-      text,
-      voiceEnabled: isVoice,
-      persona: personaId,
-    );
+    try {
+      final stream = _repository.streamMessage(
+        text,
+        persona: state.persona,
+        cancellationToken: _currentCancellation,
+      );
 
-    if (response != null && response.containsKey('buddy_message')) {
-      final buddyData = response['buddy_message'] as Map<String, dynamic>;
+      final tokenBuffer = StringBuffer();
+      DateTime lastUiUpdate = DateTime.now();
+
+      await for (final token in stream) {
+        tokenBuffer.write(token.text);
+
+        // Coalesce rapid streaming token UI updates to ~30fps to avoid UI isolate jank
+        final now = DateTime.now();
+        if (token.isFinished || now.difference(lastUiUpdate).inMilliseconds >= 33) {
+          lastUiUpdate = now;
+          state = state.copyWith(
+            streamingText: tokenBuffer.toString(),
+          );
+        }
+
+        if (token.isFinished) break;
+      }
+
+      final finalAiText = tokenBuffer.toString().trim();
       final aiMsg = ChatMessageModel(
-        id: buddyData['id'] as String? ?? (DateTime.now().millisecondsSinceEpoch + 1).toString(),
-        text: buddyData['content'] as String? ?? 'I am here with you, champion!',
+        id: 'ai_${DateTime.now().millisecondsSinceEpoch}',
+        text: finalAiText.isNotEmpty ? finalAiText : 'Every small win counts. Keep moving forward!',
         sender: MessageSender.ai,
         timestamp: DateTime.now(),
-        audioUri: buddyData['audio_url'] as String?,
       );
 
       state = state.copyWith(
         messages: [...state.messages, aiMsg],
         isGenerating: false,
+        clearStreamingText: true,
       );
-    } else {
-      // Local fallback reply
-      final aiReply = _generateAiReply(text);
-      final aiMsg = ChatMessageModel(
-        id: (DateTime.now().millisecondsSinceEpoch + 1).toString(),
-        text: aiReply,
+    } catch (e) {
+      final fallbackMsg = ChatMessageModel(
+        id: 'ai_${DateTime.now().millisecondsSinceEpoch}',
+        text: "I'm right here with you. Let's take a deep breath and keep our winning momentum steady.",
         sender: MessageSender.ai,
         timestamp: DateTime.now(),
       );
 
       state = state.copyWith(
-        messages: [...state.messages, aiMsg],
+        messages: [...state.messages, fallbackMsg],
         isGenerating: false,
+        clearStreamingText: true,
       );
+    } finally {
+      _currentCancellation = null;
     }
   }
 
-  String _generateAiReply(String prompt) {
-    final lower = prompt.toLowerCase();
-    if (lower.contains('anxious') || lower.contains('stress') || lower.contains('worried')) {
-      return "I hear you. Anxiety is just energy looking for a constructive outlet. Let's take 3 deep box breaths together or try the 5-4-3-2-1 grounding exercise. You are fully in control.";
-    } else if (lower.contains('happy') || lower.contains('great') || lower.contains('good')) {
-      return "That's fantastic! Channeling high energy into your 21-day growth habit keeps the momentum strong. What's one victory you celebrated today?";
-    } else {
-      return "Every step forward counts. As your growth partner, I'm here to back your progress. Remember: champions aren't built in comfort zones!";
+  /// Cancels in-progress AI generation immediately.
+  void cancelGeneration() {
+    _currentCancellation?.cancel();
+    _currentCancellation = null;
+    if (state.isGenerating) {
+      if (state.streamingText != null && state.streamingText!.trim().isNotEmpty) {
+        final partialMsg = ChatMessageModel(
+          id: 'ai_cancelled_${DateTime.now().millisecondsSinceEpoch}',
+          text: '${state.streamingText!.trim()} [Stopped]',
+          sender: MessageSender.ai,
+          timestamp: DateTime.now(),
+        );
+        state = state.copyWith(
+          messages: [...state.messages, partialMsg],
+          isGenerating: false,
+          clearStreamingText: true,
+        );
+      } else {
+        state = state.copyWith(
+          isGenerating: false,
+          clearStreamingText: true,
+        );
+      }
     }
+  }
+
+  /// Regenerates the last assistant response.
+  Future<void> regenerateLastMessage() async {
+    if (state.messages.isEmpty) return;
+
+    // Find last user message
+    final lastUserMsgIndex = state.messages.lastIndexWhere((m) => m.sender == MessageSender.user);
+    if (lastUserMsgIndex == -1) return;
+
+    final userPrompt = state.messages[lastUserMsgIndex].text;
+    // Trim conversation back to user message
+    final trimmed = state.messages.sublist(0, lastUserMsgIndex);
+    state = state.copyWith(messages: trimmed);
+
+    await sendMessage(userPrompt);
   }
 
   void addSystemNotification(String notificationText) {
@@ -148,7 +207,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
     state = state.copyWith(messages: [...state.messages, sysMsg]);
   }
 
-  void clearMessages() {
+  Future<void> clearMessages() async {
+    await _repository.clearHistory();
     state = state.copyWith(messages: []);
   }
 }

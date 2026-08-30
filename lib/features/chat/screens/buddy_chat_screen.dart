@@ -1078,28 +1078,86 @@ class _BuddyChatScreenState extends ConsumerState<BuddyChatScreen>
     Color activeGold,
     Color mutedTextColor,
   ) {
+    final streaming = chatState.streamingText as String?;
+    final hasStream = streaming != null && streaming.isNotEmpty;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 16,
-            height: 16,
-            child: CircularProgressIndicator(strokeWidth: 1.8, color: activeGold),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            '${chatState.persona} is reflecting...',
-            style: TextStyle(
-              color: mutedTextColor,
-              fontSize: 12,
-              fontStyle: FontStyle.italic,
+          if (hasStream) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: context.surfaceColor,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: activeGold.withValues(alpha: 0.3)),
+              ),
+              child: Text(
+                streaming,
+                style: TextStyle(
+                  color: context.textColor,
+                  fontSize: 14,
+                  height: 1.4,
+                ),
+              ),
             ),
+            const SizedBox(height: 6),
+          ],
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 1.8, color: activeGold),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    hasStream ? '${chatState.persona} is generating...' : '${chatState.persona} is reflecting...',
+                    style: TextStyle(
+                      color: mutedTextColor,
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
+              GestureDetector(
+                onTap: () => ref.read(chatProvider.notifier).cancelGeneration(),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: VinRColors.crimson.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: VinRColors.crimson.withValues(alpha: 0.4)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(LucideIcons.square, size: 10, color: VinRColors.crimson),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Stop',
+                        style: TextStyle(
+                          color: VinRColors.crimson,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
+
 
   Widget _buildQuickPrompts(BuildContext context, Color activeGold, Color primaryTextColor) {
     return SingleChildScrollView(
