@@ -21,8 +21,8 @@ class ModelCorruptError extends AiError {
 }
 
 class ModelLoadFailedError extends AiError {
-  const ModelLoadFailedError([super.message = 'Failed to load model weights into runtime.', super.details])
-      : super(code: 'MODEL_LOAD_FAILED');
+  const ModelLoadFailedError([super.message = 'Failed to load model weights into runtime.', dynamic details])
+      : super(code: 'MODEL_LOAD_FAILED', details: details);
 }
 
 class RuntimeUnavailableError extends AiError {
@@ -31,8 +31,8 @@ class RuntimeUnavailableError extends AiError {
 }
 
 class GenerationFailedError extends AiError {
-  const GenerationFailedError([super.message = 'AI text generation failed.', super.details])
-      : super(code: 'GENERATION_FAILED');
+  const GenerationFailedError([super.message = 'AI text generation failed.', dynamic details])
+      : super(code: 'GENERATION_FAILED', details: details);
 }
 
 class GenerationCancelledError extends AiError {
@@ -46,8 +46,8 @@ class ContextTooLargeError extends AiError {
 }
 
 class InvalidStructuredOutputError extends AiError {
-  const InvalidStructuredOutputError([super.message = 'Model output did not match expected JSON schema.', super.details])
-      : super(code: 'INVALID_STRUCTURED_OUTPUT');
+  const InvalidStructuredOutputError([super.message = 'Model output did not match expected JSON schema.', dynamic details])
+      : super(code: 'INVALID_STRUCTURED_OUTPUT', details: details);
 }
 
 class MemoryPressureError extends AiError {
@@ -66,6 +66,6 @@ class VoiceUnavailableError extends AiError {
 }
 
 class UnknownAiError extends AiError {
-  const UnknownAiError([super.message = 'An unexpected AI subsystem error occurred.', super.details])
-      : super(code: 'UNKNOWN_AI_ERROR');
+  const UnknownAiError([super.message = 'An unexpected AI subsystem error occurred.', dynamic details])
+      : super(code: 'UNKNOWN_AI_ERROR', details: details);
 }

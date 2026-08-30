@@ -3,8 +3,6 @@ import 'package:vinr_app/core/ai/domain/ai_task.dart';
 import 'package:vinr_app/core/ai/domain/ai_message.dart';
 import 'package:vinr_app/core/ai/domain/ai_memory.dart';
 import 'package:vinr_app/core/ai/domain/ai_context.dart';
-import 'package:vinr_app/core/ai/domain/ai_request.dart';
-import 'package:vinr_app/core/ai/domain/ai_response.dart';
 import 'package:vinr_app/core/ai/domain/ai_error.dart';
 import 'package:vinr_app/core/ai/domain/ai_capability.dart';
 

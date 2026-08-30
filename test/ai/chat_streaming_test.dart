@@ -53,7 +53,7 @@ void main() {
       );
 
       int count = 0;
-      await for (final token in stream) {
+      await for (final _ in stream) {
         count++;
         if (count == 3) {
           cancellationToken.cancel();

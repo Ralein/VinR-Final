@@ -180,7 +180,7 @@ class SettingsScreen extends ConsumerWidget {
                     child: ListView.separated(
                       shrinkWrap: true,
                       itemCount: memories.length,
-                      separatorBuilder: (_, __) => const Divider(height: 12),
+                      separatorBuilder: (context, index) => const Divider(height: 12),
                       itemBuilder: (context, i) {
                         final mem = memories[i];
                         return Row(
@@ -258,7 +258,7 @@ class SettingsScreen extends ConsumerWidget {
                     ],
                   ),
                   loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (_, __) => Text('Diagnostics ready on next inference pass.', style: TextStyle(color: mutedTextColor)),
+                  error: (e, stack) => Text('Diagnostics ready on next inference pass.', style: TextStyle(color: mutedTextColor)),
                 ),
                 const SizedBox(height: 24),
               ],
@@ -268,6 +268,7 @@ class SettingsScreen extends ConsumerWidget {
       },
     );
   }
+
 
   Widget _buildMetricRow(BuildContext context, String title, String value, IconData icon, Color color) {
     return Container(
@@ -630,8 +631,9 @@ class SettingsScreen extends ConsumerWidget {
                           color: VinRColors.crimson.withValues(alpha: 0.12),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(LucideIcons.messageSquareX, color: VinRColors.crimson, size: 18),
+                        child: Icon(LucideIcons.messageSquare, color: VinRColors.crimson, size: 18),
                       ),
+
                       title: Text(
                         'Clear AI Conversations',
                         style: VinRTypography.body.copyWith(fontWeight: FontWeight.bold, color: context.textColor),

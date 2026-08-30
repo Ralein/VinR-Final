@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vinr_app/core/ai/infrastructure/storage/generation_cache.dart';
-import 'package:vinr_app/features/glint/models/glint_card_model.dart';
 import 'package:vinr_app/features/glint/providers/glint_provider.dart';
 
 void main() {

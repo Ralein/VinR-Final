@@ -7,7 +7,6 @@ import '../../../core/theme/vinr_typography.dart';
 import '../../../core/widgets/ambient_background.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/vinr_toast.dart';
-import '../models/glint_card_model.dart';
 import '../providers/glint_provider.dart';
 
 class GlintScreen extends ConsumerStatefulWidget {
