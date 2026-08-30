@@ -12,8 +12,6 @@ import 'model_metadata.dart';
 /// Provides offline token streaming, structured JSON generation, and cancellation handling.
 class MockLocalLlmRuntime implements LocalLlmRuntime {
   bool _isInitialized = false;
-  ModelMetadata? _loadedModel;
-  InferenceConfig _config = const InferenceConfig();
   bool _isGenerating = false;
   AiCancellationToken? _currentCancellationToken;
   int _lastLatencyMs = 0;
@@ -22,8 +20,6 @@ class MockLocalLlmRuntime implements LocalLlmRuntime {
   @override
   Future<void> initialize(ModelMetadata model, [InferenceConfig? config]) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    _loadedModel = model;
-    _config = config ?? const InferenceConfig();
     _isInitialized = true;
   }
 
@@ -31,7 +27,6 @@ class MockLocalLlmRuntime implements LocalLlmRuntime {
   Future<void> dispose() async {
     await cancelCurrentGeneration();
     _isInitialized = false;
-    _loadedModel = null;
   }
 
   @override

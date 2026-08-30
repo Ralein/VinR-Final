@@ -92,7 +92,6 @@ class GenerationProfile {
       case AiTask.voiceResponse:
         return voice;
       case AiTask.suggestion:
-      case AiTask.glintQuote:
         return motivational;
       case AiTask.conversation:
       default:
