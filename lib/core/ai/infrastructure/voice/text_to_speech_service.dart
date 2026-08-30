@@ -71,6 +71,12 @@ class TextToSpeechService {
     _flutterTts.setPitch(pitch);
   }
 
+  void setVolume(double volume) {
+    _volume = volume;
+    _flutterTts.setVolume(volume);
+  }
+
+
   /// Speaks the provided text using native on-device synthesis with persona voice tuning.
   Future<bool> speak(String text, {String? personaId}) async {
     if (text.trim().isEmpty) return false;

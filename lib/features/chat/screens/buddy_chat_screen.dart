@@ -122,6 +122,13 @@ class _BuddyChatScreenState extends ConsumerState<BuddyChatScreen>
     _audioPlayer.onPlayerComplete.listen((_) {
       if (mounted) setState(() => _currentlyPlayingAudioId = null);
     });
+
+    TextToSpeechService.instance.playingStateStream.listen((isPlaying) {
+      if (!isPlaying && mounted && _currentlyPlayingAudioId != null) {
+        setState(() => _currentlyPlayingAudioId = null);
+      }
+    });
+
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -146,6 +153,7 @@ class _BuddyChatScreenState extends ConsumerState<BuddyChatScreen>
   @override
   void dispose() {
     _speechToText.stop();
+    TextToSpeechService.instance.stop();
     _messageController.dispose();
     _scrollController.dispose();
     _recordingTimer?.cancel();
@@ -167,23 +175,36 @@ class _BuddyChatScreenState extends ConsumerState<BuddyChatScreen>
       _recognizedText = '';
     });
 
+    if (!_sttAvailable) {
+      await _initStt();
+    }
+
     if (_sttAvailable) {
-      await _speechToText.listen(
-        onResult: (result) {
-          if (mounted) {
-            setState(() {
-              _recognizedText = result.recognizedWords;
-              if (result.recognizedWords.isNotEmpty) {
-                _messageController.text = result.recognizedWords;
-              }
-            });
-          }
-        },
-        listenOptions: stt.SpeechListenOptions(
-          listenFor: const Duration(seconds: 60),
-          pauseFor: const Duration(seconds: 10),
-        ),
-      );
+      try {
+        await _speechToText.listen(
+          onResult: (result) {
+            if (mounted) {
+              setState(() {
+                _recognizedText = result.recognizedWords;
+                if (result.recognizedWords.isNotEmpty) {
+                  _messageController.text = result.recognizedWords;
+                }
+              });
+            }
+          },
+          listenOptions: stt.SpeechListenOptions(
+            listenFor: const Duration(seconds: 60),
+            pauseFor: const Duration(seconds: 10),
+            cancelOnError: false,
+          ),
+        );
+      } catch (e) {
+        debugPrint('STT listen error: $e');
+      }
+    } else {
+      SpeechToTextService.instance.initialize().then((ok) {
+        if (mounted) setState(() => _sttAvailable = ok);
+      });
     }
 
     _recordingTimer?.cancel();
@@ -198,6 +219,7 @@ class _BuddyChatScreenState extends ConsumerState<BuddyChatScreen>
     if (_speechToText.isListening) {
       await _speechToText.stop();
     }
+    await SpeechToTextService.instance.stop();
     setState(() {
       _isRecording = false;
       _isLocked = false;
@@ -215,6 +237,7 @@ class _BuddyChatScreenState extends ConsumerState<BuddyChatScreen>
     if (_speechToText.isListening) {
       await _speechToText.stop();
     }
+    await SpeechToTextService.instance.stop();
 
     final spokenText = _recognizedText.trim().isNotEmpty
         ? _recognizedText.trim()
@@ -262,29 +285,39 @@ class _BuddyChatScreenState extends ConsumerState<BuddyChatScreen>
 
   Future<void> _toggleAudioPlayback(ChatMessageModel msg) async {
     if (_currentlyPlayingAudioId == msg.id) {
+      await TextToSpeechService.instance.stop();
       await _audioPlayer.stop();
       if (mounted) setState(() => _currentlyPlayingAudioId = null);
     } else {
+      await TextToSpeechService.instance.stop();
       await _audioPlayer.stop();
-      String? uri = msg.audioUri;
-      if (uri == null || uri.isEmpty) {
-        final chatState = ref.read(chatProvider);
-        final personaObj = _resolvePersona(chatState.persona);
-        final repository = ChatRepository();
-        uri = await repository.generateTts(msg.text, persona: personaObj.id);
-      }
-      if (uri != null && uri.isNotEmpty) {
-        try {
-          if (uri.startsWith('data:')) {
-            final base64Str = uri.split(',').last;
-            final bytes = base64Decode(base64Str);
-            await _audioPlayer.play(BytesSource(bytes));
-          } else {
-            await _audioPlayer.play(UrlSource(uri));
+      final chatState = ref.read(chatProvider);
+      final personaObj = _resolvePersona(chatState.persona);
+
+      setState(() => _currentlyPlayingAudioId = msg.id);
+
+      final spoke = await TextToSpeechService.instance.speak(msg.text, personaId: personaObj.id);
+      if (!spoke) {
+        String? uri = msg.audioUri;
+        if (uri == null || uri.isEmpty) {
+          final repository = ChatRepository();
+          uri = await repository.generateTts(msg.text, persona: personaObj.id);
+        }
+        if (uri != null && uri.isNotEmpty) {
+          try {
+            if (uri.startsWith('data:')) {
+              final base64Str = uri.split(',').last;
+              final bytes = base64Decode(base64Str);
+              await _audioPlayer.play(BytesSource(bytes));
+            } else {
+              await _audioPlayer.play(UrlSource(uri));
+            }
+          } catch (e) {
+            debugPrint('Audio playback error: $e');
+            if (mounted) setState(() => _currentlyPlayingAudioId = null);
           }
-          if (mounted) setState(() => _currentlyPlayingAudioId = msg.id);
-        } catch (e) {
-          debugPrint('Audio playback error: $e');
+        } else {
+          if (mounted) setState(() => _currentlyPlayingAudioId = null);
         }
       }
     }
@@ -301,6 +334,7 @@ class _BuddyChatScreenState extends ConsumerState<BuddyChatScreen>
       _scrollToBottom();
     }
   }
+
 
   void _scrollToBottom() {
     Future.delayed(const Duration(milliseconds: 150), () {

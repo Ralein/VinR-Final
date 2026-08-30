@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/ai/application/ai_scheduler.dart';
 import 'core/ai/infrastructure/runtime/model_manager.dart';
+import 'core/ai/infrastructure/voice/text_to_speech_service.dart';
 import 'core/theme/vinr_theme.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/navigation/app_router.dart';
@@ -27,7 +28,10 @@ class _VinRAppState extends ConsumerState<VinRApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    TextToSpeechService.instance.initialize();
+    ModelManager.instance.checkModelStatus();
   }
+
 
   @override
   void dispose() {
