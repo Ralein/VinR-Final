@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../application/ai_orchestrator.dart';
 import '../../application/memory_service.dart';
 import '../../domain/ai_memory.dart';
 import '../../infrastructure/runtime/inference_config.dart';

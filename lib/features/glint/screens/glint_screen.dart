@@ -194,7 +194,7 @@ class _GlintScreenState extends ConsumerState<GlintScreen> {
                                 ),
                                 IconButton(
                                   icon: Icon(
-                                    item.isFavorite ? LucideIcons.bookmarkCheck : LucideIcons.bookmark,
+                                    item.isFavorite ? LucideIcons.bookmark : LucideIcons.bookmark,
                                     color: item.isFavorite ? activeGold : mutedTextColor,
                                     size: 20,
                                   ),
@@ -203,11 +203,12 @@ class _GlintScreenState extends ConsumerState<GlintScreen> {
                                     VinRToast.show(
                                       context,
                                       message: item.isFavorite ? 'Removed from saved' : 'Saved to Glint collection',
-                                      icon: LucideIcons.bookmarkCheck,
+                                      icon: LucideIcons.bookmark,
                                       iconColor: activeGold,
                                     );
                                   },
                                 ),
+
                               ],
                             ),
                             const Spacer(),
