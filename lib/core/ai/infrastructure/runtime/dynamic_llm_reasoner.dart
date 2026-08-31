@@ -140,13 +140,13 @@ class DynamicLlmReasoner {
       }
       return 'Every circumstance you encounter is neutral until your judgment assigns value to it.';
     } else if (persona.contains('listener') || persona.contains('gentle')) {
-      return 'I hear where you are coming from regarding $subject. It takes awareness to reflect on this.';
+      return 'I hear you. Let us explore $subject together with clarity and calm.';
     } else {
       // VinR Coach
-      if (streakDays > 0) {
-        return 'Locked in on Day $streakDays. Let us break down $subject with absolute focus.';
+      if (streakDays > 1) {
+        return 'Great to connect with you on Day $streakDays. Let us break down $subject with absolute focus.';
       }
-      return 'Let us tackle $subject head-on with a clear, actionable game plan.';
+      return 'Let us break down $subject with a clear, actionable game plan.';
     }
   }
 
@@ -170,7 +170,7 @@ class DynamicLlmReasoner {
     if (persona.contains('stoic')) {
       return 'Discipline is doing what must be done, regardless of emotional inclination.\n'
           '• **Treat habits as non-negotiable duties.** You do not negotiate with yourself about your fundamental principles.\n'
-          '• **Focus on the standard, not the applause.** Excellence is habitual, proven Day by Day ($streakDays complete).';
+          '• **Focus on the standard, not the applause.** Excellence is habitual, proven by daily practice.';
     } else if (persona.contains('listener') || persona.contains('gentle')) {
       return '• **Release Perfectionism:** Consistency is not an unbroken line of perfect days; it is the kindness to restart gently whenever life intervenes.\n'
           '• **Honor Your Energy:** On low-energy days, lower the bar so you still show up, even if it is just for 2 minutes.\n'
@@ -179,9 +179,10 @@ class DynamicLlmReasoner {
       return 'Here is the **VinR 3-Pillar Habit Architecture**:\n'
           '1. **The 2-Minute Rule:** Scale down the habit until you cannot say no (e.g., put on running shoes, open one page).\n'
           '2. **Habit Stacking:** Anchor your new habit directly after an established trigger (After [Current Habit], I will [New Habit]).\n'
-          '3. **Never Miss Twice:** A missed day is an anomaly; two in a row is the start of a new, negative habit. Keep your Day $streakDays streak fortified!';
+          '3. **Never Miss Twice:** A missed day is an anomaly; two in a row is the start of a new, negative habit. Protect your winning momentum every single day!';
     }
   }
+
 
   String _buildFocusProtocol(String persona, String lower) {
     if (persona.contains('stoic')) {

@@ -6,7 +6,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 
 /// Robust on-device Text-to-Speech service wrapper.
 /// Seamlessly utilizes native on-device TTS hardware engines (Google TTS / Samsung TTS)
-/// with adaptive pitch, speech rate, and audio focus management.
+/// with natural prosody, voice selection, and distinctive persona vocal personalities.
 class TextToSpeechService {
   static final TextToSpeechService instance = TextToSpeechService._internal();
   TextToSpeechService._internal();
@@ -16,9 +16,10 @@ class TextToSpeechService {
 
   bool _isInitialized = false;
   bool _isPlaying = false;
-  double _speechRate = 0.5;
+  double _speechRate = 0.50;
   double _pitch = 1.0;
   double _volume = 1.0;
+  List<dynamic> _availableVoices = [];
 
   final StreamController<bool> _playingStateController =
       StreamController<bool>.broadcast();
@@ -72,18 +73,19 @@ class TextToSpeechService {
         _playingStateController.add(false);
       });
 
-      // Query available engines on Android
-      if (Platform.isAndroid) {
-        try {
-          final engines = await _flutterTts.getEngines;
-          debugPrint('TextToSpeechService: Available TTS engines: $engines');
-        } catch (e) {
-          debugPrint('TextToSpeechService getEngines notice: $e');
+      // Query available voices on device for natural voice tuning
+      try {
+        final voices = await _flutterTts.getVoices;
+        if (voices is List) {
+          _availableVoices = voices;
+          debugPrint('TextToSpeechService: Loaded ${_availableVoices.length} device voice profiles.');
         }
+      } catch (e) {
+        debugPrint('TextToSpeechService voice query notice: $e');
       }
 
       _isInitialized = true;
-      debugPrint('TextToSpeechService: Successfully initialized native TTS engine');
+      debugPrint('TextToSpeechService: Native TTS engine initialized.');
     } catch (e) {
       debugPrint('TextToSpeechService init exception: $e');
     }
@@ -104,7 +106,7 @@ class TextToSpeechService {
     _flutterTts.setVolume(volume);
   }
 
-  /// Speaks the provided text using native on-device synthesis with persona voice tuning.
+  /// Speaks the provided text using native on-device synthesis with natural prosody and persona vocal tuning.
   Future<bool> speak(String text, {String? personaId}) async {
     if (text.trim().isEmpty) return false;
 
@@ -113,27 +115,31 @@ class TextToSpeechService {
     }
 
     try {
-      // Ensure any previous speech is halted
       await _flutterTts.stop();
       await _audioPlayer.stop();
 
-      // Configure persona voice cadence
+      // Configure distinctive persona vocal tone and pacing
       final p = personaId?.toLowerCase() ?? '';
       if (p.contains('stoic')) {
-        await _flutterTts.setSpeechRate(0.44);
-        await _flutterTts.setPitch(0.92);
+        // Stoic Mentor: Deep, measured, deliberate, authoritative
+        await _flutterTts.setSpeechRate(0.43);
+        await _flutterTts.setPitch(0.88);
+        _applyPersonaVoice(gender: 'male', locale: 'en-US');
       } else if (p.contains('listener') || p.contains('gentle')) {
+        // Gentle Listener: Soft, calming, serene, empathetic
         await _flutterTts.setSpeechRate(0.46);
-        await _flutterTts.setPitch(1.05);
+        await _flutterTts.setPitch(1.06);
+        _applyPersonaVoice(gender: 'female', locale: 'en-US');
       } else {
-        // VinR Coach default: calm, confident, energetic
-        await _flutterTts.setSpeechRate(0.48);
-        await _flutterTts.setPitch(1.0);
+        // VinR Coach: Grounded, confident, motivating baritone
+        await _flutterTts.setSpeechRate(0.49);
+        await _flutterTts.setPitch(0.96);
+        _applyPersonaVoice(gender: 'male', locale: 'en-US');
       }
 
       await _flutterTts.setVolume(1.0);
 
-      // Clean markdown characters, asterisks, bullet points, headers, emojis
+      // Clean text and introduce natural vocal prosody punctuation
       final cleanText = text
           .replaceAll(RegExp(r'[\*\_#`~>]'), '')
           .replaceAll('•', '')
@@ -156,6 +162,22 @@ class TextToSpeechService {
       _playingStateController.add(false);
       return false;
     }
+  }
+
+  void _applyPersonaVoice({required String gender, required String locale}) {
+    if (_availableVoices.isEmpty) return;
+    try {
+      for (final voice in _availableVoices) {
+        if (voice is Map) {
+          final name = (voice['name'] ?? '').toString().toLowerCase();
+          final loc = (voice['locale'] ?? '').toString();
+          if (loc.startsWith('en') && (name.contains(gender) || name.contains('natural') || name.contains('neural'))) {
+            _flutterTts.setVoice({'name': voice['name'], 'locale': voice['locale']});
+            break;
+          }
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> stop() async {

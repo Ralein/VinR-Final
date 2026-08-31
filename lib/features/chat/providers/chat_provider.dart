@@ -44,10 +44,11 @@ class ChatNotifier extends StateNotifier<ChatState> {
             messages: [
               ChatMessageModel(
                 id: 'm_welcome',
-                text: "Welcome back champion! I'm VinR, your private growth partner. Ready to strengthen Day 5 of your winning streak?",
+                text: "Welcome back champion! I'm VinR, your private on-device growth companion. What are you focusing on today?",
                 sender: MessageSender.ai,
                 timestamp: DateTime.now().subtract(const Duration(minutes: 2)),
               ),
+
             ],
           ),
         ) {

@@ -29,8 +29,9 @@ class _VinRAppState extends ConsumerState<VinRApp> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     TextToSpeechService.instance.initialize();
-    ModelManager.instance.checkModelStatus();
+    ModelManager.instance.ensureAutoProvisioned();
   }
+
 
 
   @override

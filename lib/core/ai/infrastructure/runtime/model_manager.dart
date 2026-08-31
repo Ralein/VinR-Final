@@ -94,6 +94,16 @@ class ModelManager {
     }
   }
 
+  /// Automatically provisions the 500 MB quantized on-device model weights on app launch.
+  Future<void> ensureAutoProvisioned() async {
+    final installed = await checkModelStatus();
+    if (!installed) {
+      debugPrint('ModelManager: Auto-provisioning 500MB on-device model weights in background...');
+      await downloadAndInstallModel();
+    }
+  }
+
+
   /// Downloads or stages local quantized model weights atomically onto disk (500 MB).
   Future<bool> downloadAndInstallModel({void Function(double progress)? onProgress}) async {
     if (_state == ModelState.downloading) return false;

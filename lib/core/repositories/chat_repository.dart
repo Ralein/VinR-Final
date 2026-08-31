@@ -38,12 +38,13 @@ class ChatRepository {
     // 3. Build token-budgeted prompt context
     final context = ContextBuilder.build(
       currentScreen: 'BuddyChatScreen',
-      streakDays: streakDays ?? 5,
+      streakDays: streakDays ?? 0,
       currentMood: currentMood,
       persona: persona,
       fullHistory: history,
       availableMemories: memories,
     );
+
 
     final request = AiRequest(
       task: AiTask.conversation,
