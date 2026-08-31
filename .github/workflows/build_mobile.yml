@@ -67,15 +67,15 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build iOS IPA (No Codesign / Development)
-        run: flutter build ipa --no-codesign
+      - name: Build iOS Application (No Codesign)
+        run: flutter build ios --release --no-codesign
 
       - name: Package Payload as IPA Archive
         run: |
           mkdir -p build/ios/ipa_output/Payload
-          cp -r build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app build/ios/ipa_output/Payload/
+          cp -r build/ios/iphoneos/Runner.app build/ios/ipa_output/Payload/
           cd build/ios/ipa_output
-          zip -r VinR-iOS-Package.ipa Payload
+          zip -r -q VinR-iOS-Package.ipa Payload
           cd ../../..
 
       - name: Upload iOS IPA Package
@@ -83,11 +83,4 @@ jobs:
         with:
           name: VinR-iOS-Package-IPA
           path: build/ios/ipa_output/VinR-iOS-Package.ipa
-          if-no-files-found: warn
-
-      - name: Upload Runner XCArchive
-        uses: actions/upload-artifact@v4
-        with:
-          name: VinR-iOS-XCArchive
-          path: build/ios/archive/Runner.xcarchive
-          if-no-files-found: warn
+          if-no-files-found: error
