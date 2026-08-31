@@ -24,6 +24,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.41.9'
           channel: 'stable'
           cache: true
 
@@ -37,7 +38,7 @@ jobs:
         run: flutter test
 
       - name: Build Android Release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --android-skip-build-dependency-validation
 
       - name: Upload Android APK Artifact
         uses: actions/upload-artifact@v4
@@ -56,27 +57,49 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.41.9'
           channel: 'stable'
           cache: true
 
-      - name: Set up CocoaPods
+      - name: Install CocoaPods
         run: |
-          sudo gem install cocoapods
+          sudo gem install cocoapods --no-document
           pod --version
 
-      - name: Install dependencies
+      - name: Install Flutter dependencies
         run: flutter pub get
 
-      - name: Build iOS Application (No Codesign)
-        run: flutter build ios --release --no-codesign
+      - name: Generate iOS project files
+        run: |
+          flutter build ios --release --no-codesign --config-only
 
-      - name: Package Payload as IPA Archive
+      - name: Run pod install
+        run: |
+          cd ios
+          pod install --repo-update
+          cd ..
+
+      - name: Build iOS App via xcodebuild (No Code Signing)
+        run: |
+          xcodebuild \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath build/ios/VinR.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            archive | xcpretty
+
+      - name: Package IPA from Archive
         run: |
           mkdir -p build/ios/ipa_output/Payload
-          cp -r build/ios/iphoneos/Runner.app build/ios/ipa_output/Payload/
+          cp -r "build/ios/VinR.xcarchive/Products/Applications/Runner.app" \
+            build/ios/ipa_output/Payload/
           cd build/ios/ipa_output
           zip -r -q VinR-iOS-Package.ipa Payload
-          cd ../../..
+          ls -lh VinR-iOS-Package.ipa
 
       - name: Upload iOS IPA Package
         uses: actions/upload-artifact@v4
