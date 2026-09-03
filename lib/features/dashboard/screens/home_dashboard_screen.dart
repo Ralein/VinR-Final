@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +17,9 @@ import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/gold_button.dart';
 import '../../../core/widgets/vinr_toast.dart';
 import '../../../core/widgets/app_animations.dart';
+import '../../../core/widgets/celebration_confetti.dart';
+import '../../../core/widgets/vinr_mascot_card.dart';
+import '../../../core/widgets/daily_quests_card.dart';
 import '../../../core/repositories/checkin_repository.dart';
 import '../../../core/repositories/chat_repository.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -30,8 +34,11 @@ class HomeDashboardScreen extends ConsumerStatefulWidget {
 
 class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
   bool _isPlayingQuoteAudio = false;
+  bool _isSubmittingCheckin = false;
   int _quoteIndex = 0;
   late final AudioPlayer _audioPlayer;
+  StreamSubscription? _playerCompleteSubscription;
+  StreamSubscription? _ttsPlayingSubscription;
   final _checkinRepo = CheckinRepository();
   final _chatRepo = ChatRepository();
 
@@ -67,10 +74,10 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
     super.initState();
     _quoteIndex = DateTime.now().day % _stoicQuotes.length;
     _audioPlayer = AudioPlayer();
-    _audioPlayer.onPlayerComplete.listen((_) {
+    _playerCompleteSubscription = _audioPlayer.onPlayerComplete.listen((_) {
       if (mounted) setState(() => _isPlayingQuoteAudio = false);
     });
-    TextToSpeechService.instance.playingStateStream.listen((isPlaying) {
+    _ttsPlayingSubscription = TextToSpeechService.instance.playingStateStream.listen((isPlaying) {
       if (!isPlaying && mounted && _isPlayingQuoteAudio) {
         setState(() => _isPlayingQuoteAudio = false);
       }
@@ -79,6 +86,8 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
 
   @override
   void dispose() {
+    _playerCompleteSubscription?.cancel();
+    _ttsPlayingSubscription?.cancel();
     _audioPlayer.dispose();
     TextToSpeechService.instance.stop();
     super.dispose();
@@ -162,8 +171,9 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
 
     final currentQuoteObj = _stoicQuotes[_quoteIndex];
 
-    return Scaffold(
-      body: AmbientBackground(
+    return CelebrationOverlay(
+      child: Scaffold(
+        body: AmbientBackground(
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 140),
@@ -245,7 +255,14 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 14),
+
+                // VinR Mascot Interactive Companion
+                VinRMascotCard(
+                  streakDays: streak.currentStreak,
+                  isCompletedToday: streak.isCompletedToday,
+                ),
+                const SizedBox(height: 18),
 
                 // Streak Hero Component
                 FadeSlideTransition(
@@ -259,25 +276,43 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // One-Tap Check-In Nudge Card
+                // One-Tap Check-In Nudge Card with XP badge and double-click guard
                 if (!streak.isCompletedToday) ...[
                   GoldButton(
-                    text: 'Record Today\'s Check-in →',
-                    onPressed: () async {
-                      streakNotifier.checkInToday();
-                      await _checkinRepo.submitCheckin(mood: 'Calm');
-                      if (context.mounted) {
-                        VinRToast.show(
-                          context,
-                          message: 'Daily Check-in Recorded! Winning streak updated.',
-                          icon: LucideIcons.flame,
-                          iconColor: VinRColors.gold,
-                        );
-                      }
-                    },
+                    text: _isSubmittingCheckin ? 'Recording Check-in...' : 'Record Today\'s Check-in →',
+                    badgeText: '+50 XP',
+                    isLoading: _isSubmittingCheckin,
+                    onPressed: _isSubmittingCheckin
+                        ? null
+                        : () async {
+                            setState(() => _isSubmittingCheckin = true);
+                            try {
+                              streakNotifier.checkInToday();
+                              await _checkinRepo.submitCheckin(mood: 'Calm');
+                              if (context.mounted) {
+                                CelebrationOverlay.show(context);
+                                VinRToast.show(
+                                  context,
+                                  message: 'Daily Check-in Recorded! Winning streak updated. (+50 XP)',
+                                  icon: LucideIcons.flame,
+                                  iconColor: VinRColors.gold,
+                                );
+                              }
+                            } finally {
+                              if (mounted) {
+                                setState(() => _isSubmittingCheckin = false);
+                              }
+                            }
+                          },
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                 ],
+
+                // Duolingo-style Daily Quests Checklist
+                DailyQuestsCard(
+                  isCheckinDone: streak.isCompletedToday,
+                ),
+                const SizedBox(height: 20),
 
                 // Quick Mindfulness & Growth Micro-Tools Grid
                 const SectionHeader(
@@ -433,8 +468,9 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildToolCard(
     BuildContext context, {

@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -5,9 +6,10 @@ import '../../../core/theme/theme_context.dart';
 import '../../../core/theme/vinr_colors.dart';
 import '../../../core/theme/vinr_typography.dart';
 import '../../../core/widgets/ambient_background.dart';
+import '../../../core/widgets/celebration_confetti.dart';
+import '../../../core/widgets/vinr_path_node.dart';
 import '../../../core/widgets/glass_container.dart';
-import '../../../core/widgets/section_header.dart';
-import '../../../core/widgets/gold_button.dart';
+import '../../../core/widgets/tactile_3d_button.dart';
 import '../../../core/widgets/vinr_toast.dart';
 import '../../streak/providers/streak_provider.dart';
 
@@ -35,8 +37,6 @@ class JourneyScreen extends ConsumerStatefulWidget {
 }
 
 class _JourneyScreenState extends ConsumerState<JourneyScreen> {
-  int _selectedDay = 1;
-
   static final List<DayRoadmapItem> _roadmap = [
     DayRoadmapItem(dayNumber: 1, title: 'Intention & Reset', category: 'Mindset Foundation', actionPrompt: 'Set your core 21-day goal and log your first gratitude entry.', icon: LucideIcons.compass),
     DayRoadmapItem(dayNumber: 2, title: 'Gratitude Anchor', category: 'Positive Framing', actionPrompt: 'Write 3 things that brought light to your day.', icon: LucideIcons.smile),
@@ -61,28 +61,209 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen> {
     DayRoadmapItem(dayNumber: 21, title: '21-Day VinR Winner', category: 'Identity Mastery', actionPrompt: 'CONGRATULATIONS! You have completed the 21-Day Transformation!', icon: LucideIcons.crown),
   ];
 
+  void _openQuestBottomSheet(BuildContext context, DayRoadmapItem item, int totalDaysCompleted, bool isCompletedToday) {
+    final isCompleted = item.dayNumber <= totalDaysCompleted;
+    final isCurrent = item.dayNumber == totalDaysCompleted + 1 && !isCompletedToday;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (modalContext) {
+        final isLight = Theme.of(context).brightness == Brightness.light;
+        final bg = isLight ? Colors.white : VinRColors.elevated;
+        final primaryTextColor = isLight ? const Color(0xFF1A1208) : VinRColors.textPrimary;
+        final mutedTextColor = isLight ? const Color(0xFF5C5446) : VinRColors.textMuted;
+        final activeGold = isLight ? const Color(0xFFB8832A) : VinRColors.gold;
+
+        return Container(
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border.all(
+              color: isLight ? const Color(0x22000000) : VinRColors.borderGold,
+              width: 1.5,
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Handle Bar
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: mutedTextColor.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+
+                // Quest Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isCompleted
+                            ? VinRColors.emerald.withValues(alpha: 0.15)
+                            : (isCurrent ? activeGold.withValues(alpha: 0.18) : Colors.grey.withValues(alpha: 0.15)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        'DAY ${item.dayNumber} QUEST',
+                        style: TextStyle(
+                          color: isCompleted
+                              ? VinRColors.emerald
+                              : (isCurrent ? activeGold : mutedTextColor),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: VinRColors.xpGem.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: const [
+                          Icon(LucideIcons.zap, size: 13, color: VinRColors.xpGem),
+                          SizedBox(width: 4),
+                          Text(
+                            '+50 XP',
+                            style: TextStyle(
+                              color: VinRColors.xpGem,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                // Quest Title & Category
+                Text(
+                  item.title,
+                  style: VinRTypography.h1.copyWith(fontSize: 22, color: primaryTextColor),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  item.category,
+                  style: VinRTypography.bodySm.copyWith(color: mutedTextColor),
+                ),
+                const SizedBox(height: 16),
+
+                // Prompt Card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isLight ? const Color(0xFFF7F5F0) : VinRColors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isLight ? const Color(0x15000000) : VinRColors.border,
+                    ),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: activeGold.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(item.icon, color: activeGold, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          item.actionPrompt,
+                          style: TextStyle(
+                            color: primaryTextColor,
+                            fontSize: 14,
+                            height: 1.45,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Action Button
+                if (isCompleted)
+                  Tactile3DButton(
+                    text: 'Quest Completed ✨',
+                    variant: TactileButtonVariant.emerald,
+                    icon: LucideIcons.checkCheck,
+                    onPressed: () => Navigator.pop(modalContext),
+                  )
+                else if (isCurrent)
+                  Tactile3DButton(
+                    text: 'Complete Day ${item.dayNumber} Quest →',
+                    variant: TactileButtonVariant.gold,
+                    badgeText: '+50 XP',
+                    onPressed: () {
+                      Navigator.pop(modalContext);
+                      ref.read(streakProvider.notifier).markDayComplete();
+                      CelebrationOverlay.show(context);
+                      VinRToast.show(
+                        context,
+                        message: 'Day ${item.dayNumber} Complete! Streak updated (+50 XP)',
+                        icon: LucideIcons.flame,
+                        iconColor: VinRColors.gold,
+                      );
+                    },
+                  )
+                else
+                  Tactile3DButton(
+                    text: 'Locked — Complete Day $totalDaysCompleted First',
+                    variant: TactileButtonVariant.surface,
+                    icon: LucideIcons.lock,
+                    onPressed: () => Navigator.pop(modalContext),
+                  ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Winding horizontal offset pattern for VinR quest trail (-0.6 to +0.6)
+  double _getHorizontalOffset(int index) {
+    // Smooth sinusoidal snake wave
+    return sin(index * 0.95) * 0.45;
+  }
+
   @override
   Widget build(BuildContext context) {
     final streak = ref.watch(streakProvider);
-    final notifier = ref.read(streakProvider.notifier);
-
     final isLight = context.isLight;
     final primaryTextColor = context.textColor;
     final mutedTextColor = context.textMutedColor;
     final activeGold = context.goldColor;
 
-    final activeRoadmapItem = _roadmap.firstWhere(
-      (r) => r.dayNumber == _selectedDay,
-      orElse: () => _roadmap.first,
-    );
-
-    return Scaffold(
-      body: AmbientBackground(
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 140.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return CelebrationOverlay(
+      child: Scaffold(
+        body: AmbientBackground(
+          child: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 140.0),
               children: [
                 // Header Banner
                 Row(
@@ -93,12 +274,12 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '21-Day Growth Plan',
+                            '21-Day Habit Quest',
                             style: VinRTypography.h1.copyWith(fontSize: 26, color: primaryTextColor),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Master daily habits & identity transformation.',
+                            'Follow the trail to complete your identity reset.',
                             style: VinRTypography.bodySm.copyWith(color: mutedTextColor),
                           ),
                         ],
@@ -111,189 +292,139 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen> {
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: activeGold.withValues(alpha: 0.4)),
                       ),
-                      child: Text(
-                        'Day ${streak.totalDaysCompleted}/21',
-                        style: VinRTypography.label.copyWith(color: activeGold, fontWeight: FontWeight.bold),
+                      child: Row(
+                        children: [
+                          Icon(LucideIcons.award, size: 14, color: activeGold),
+                          const SizedBox(width: 5),
+                          Text(
+                            'Day ${streak.totalDaysCompleted}/21',
+                            style: VinRTypography.label.copyWith(color: activeGold, fontWeight: FontWeight.bold),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
-
-                // Today Check-in Hero Card
-                GlassContainer(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            streak.isCompletedToday ? LucideIcons.checkCircle2 : LucideIcons.target,
-                            color: streak.isCompletedToday ? VinRColors.emerald : activeGold,
-                            size: 22,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            streak.isCompletedToday ? 'TODAY\'S CHECK-IN COMPLETED!' : 'TODAY\'S ACTION NUDGE',
-                            style: VinRTypography.label.copyWith(
-                              color: streak.isCompletedToday ? VinRColors.emerald : activeGold,
-                              letterSpacing: 1.0,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        streak.isCompletedToday
-                            ? 'Awesome work! You maintained your streak for today. Keep building your daily momentum.'
-                            : 'Take 60 seconds to execute today\'s roadmap focus and lock in your daily winning point.',
-                        style: VinRTypography.bodySm.copyWith(color: primaryTextColor, height: 1.4),
-                      ),
-                      const SizedBox(height: 16),
-                      if (!streak.isCompletedToday)
-                        GoldButton(
-                          text: 'Mark Today Complete →',
-                          onPressed: () {
-                            notifier.markDayComplete();
-                            VinRToast.show(
-                              context,
-                              message: 'Winning Streak Updated for Today!',
-                              icon: LucideIcons.flame,
-                              iconColor: VinRColors.gold,
-                            );
-                          },
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Interactive 21-Day Matrix Grid
-                const SectionHeader(
-                  title: '21-DAY ROADMAP MATRIX',
-                  icon: LucideIcons.calendar,
-                ),
-                GlassContainer(
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: 21,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 7,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8,
-                    ),
-                    itemBuilder: (context, index) {
-                      final dayNum = index + 1;
-                      final isCompleted = dayNum <= streak.totalDaysCompleted;
-                      final isSelected = dayNum == _selectedDay;
-                      final isToday = dayNum == streak.totalDaysCompleted + 1 && !streak.isCompletedToday;
-
-                      IconData? milestoneIcon;
-                      if (dayNum == 7) milestoneIcon = LucideIcons.shieldCheck;
-                      if (dayNum == 14) milestoneIcon = LucideIcons.award;
-                      if (dayNum == 21) milestoneIcon = LucideIcons.trophy;
-
-                      return GestureDetector(
-                        onTap: () => setState(() => _selectedDay = dayNum),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 150),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? activeGold.withValues(alpha: 0.3)
-                                : (isCompleted
-                                    ? activeGold.withValues(alpha: 0.18)
-                                    : (isToday ? activeGold.withValues(alpha: 0.1) : (isLight ? const Color(0xFFF5F2EC) : VinRColors.surface))),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: isSelected
-                                  ? activeGold
-                                  : (isCompleted
-                                      ? activeGold.withValues(alpha: 0.4)
-                                      : (isToday ? activeGold : context.borderColor)),
-                              width: isSelected || isToday ? 2 : 1,
-                            ),
-                          ),
-                          child: Center(
-                            child: isCompleted
-                                ? Icon(LucideIcons.check, color: activeGold, size: 16)
-                                : (milestoneIcon != null
-                                    ? Icon(milestoneIcon, color: isSelected ? activeGold : mutedTextColor, size: 14)
-                                    : Text(
-                                        '$dayNum',
-                                        style: TextStyle(
-                                          color: isSelected ? activeGold : mutedTextColor,
-                                          fontSize: 11,
-                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                        ),
-                                      )),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
                 const SizedBox(height: 20),
 
-                // Selected Day Focus Details Card
-                const SectionHeader(
-                  title: 'DAY ROADMAP ACTION DETAILS',
-                  icon: LucideIcons.target,
-                  iconColor: VinRColors.goldLight,
-                ),
+                // Today Status Nudge Card
                 GlassContainer(
-                  padding: const EdgeInsets.all(18),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  child: Row(
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: activeGold.withValues(alpha: 0.18),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(activeRoadmapItem.icon, color: activeGold, size: 20),
-                              ),
-                              const SizedBox(width: 12),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'DAY ${activeRoadmapItem.dayNumber}: ${activeRoadmapItem.title.toUpperCase()}',
-                                    style: TextStyle(fontWeight: FontWeight.bold, color: activeGold, fontSize: 13, letterSpacing: 0.5),
-                                  ),
-                                  Text(
-                                    activeRoadmapItem.category,
-                                    style: TextStyle(color: mutedTextColor, fontSize: 11),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          if (_selectedDay <= streak.totalDaysCompleted)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: VinRColors.emeraldGlow,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Text('COMPLETED', style: TextStyle(color: VinRColors.emerald, fontSize: 10, fontWeight: FontWeight.bold)),
-                            ),
-                        ],
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: streak.isCompletedToday
+                              ? VinRColors.emerald.withValues(alpha: 0.18)
+                              : activeGold.withValues(alpha: 0.18),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          streak.isCompletedToday ? LucideIcons.checkCheck : LucideIcons.flame,
+                          color: streak.isCompletedToday ? VinRColors.emerald : activeGold,
+                          size: 22,
+                        ),
                       ),
-                      const SizedBox(height: 14),
-                      Text(
-                        activeRoadmapItem.actionPrompt,
-                        style: TextStyle(color: primaryTextColor, fontSize: 14, height: 1.45),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              streak.isCompletedToday
+                                  ? "TODAY'S STEP COMPLETE!"
+                                  : "YOUR NEXT MILESTONE AWAITS",
+                              style: TextStyle(
+                                color: streak.isCompletedToday ? VinRColors.emerald : activeGold,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11.5,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              streak.isCompletedToday
+                                  ? "Momentum secured. Rest well or explore other tools."
+                                  : "Tap the active stepping stone on the trail to continue.",
+                              style: TextStyle(color: mutedTextColor, fontSize: 12),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 32),
+
+                // Winding VinR Quest Path Map
+                Center(
+                  child: Column(
+                    children: List.generate(_roadmap.length, (index) {
+                      final item = _roadmap[index];
+                      final dayNum = item.dayNumber;
+                      final isCompleted = dayNum <= streak.totalDaysCompleted;
+                      final isCurrent = dayNum == streak.totalDaysCompleted + 1 && !streak.isCompletedToday;
+                      final isMilestone = dayNum == 7 || dayNum == 14 || dayNum == 21;
+
+                      final PathNodeState nodeState = isCompleted
+                          ? PathNodeState.completed
+                          : (isCurrent ? PathNodeState.active : PathNodeState.locked);
+
+                      final xOffset = _getHorizontalOffset(index);
+
+                      return Column(
+                        children: [
+                          // Path connecting trail dots
+                          if (index > 0)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(3, (dotIndex) {
+                                  final dotCompleted = (dayNum - 1) < streak.totalDaysCompleted;
+                                  return Container(
+                                    width: 6,
+                                    height: 6,
+                                    margin: const EdgeInsets.symmetric(horizontal: 2.5, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: dotCompleted
+                                          ? activeGold.withValues(alpha: 0.6)
+                                          : (isLight ? const Color(0xFFD4CEC2) : VinRColors.border),
+                                    ),
+                                  );
+                                }),
+                              ),
+                            ),
+
+                          // Aligned Node with Winding X Offset
+                          Transform.translate(
+                            offset: Offset(xOffset * 110, 0),
+                            child: VinRPathNode(
+                              dayNumber: dayNum,
+                              title: item.title,
+                              category: item.category,
+                              icon: isMilestone
+                                  ? (dayNum == 21 ? LucideIcons.crown : LucideIcons.trophy)
+                                  : item.icon,
+                              state: nodeState,
+                              isMilestone: isMilestone,
+                              onTap: () => _openQuestBottomSheet(
+                                context,
+                                item,
+                                streak.totalDaysCompleted,
+                                streak.isCompletedToday,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                      );
+                    }),
+                  ),
+                ),
+                const SizedBox(height: 40),
               ],
             ),
           ),

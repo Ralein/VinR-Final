@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import '../theme/vinr_colors.dart';
-import '../theme/vinr_typography.dart';
-import 'app_animations.dart';
+import 'tactile_3d_button.dart';
 
+/// App-wide Primary Gold Button, now powered by the 3D Tactile engine.
 class GoldButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
   final bool isLoading;
   final IconData? icon;
   final double? width;
+  final String? badgeText;
 
   const GoldButton({
     super.key,
@@ -17,72 +17,19 @@ class GoldButton extends StatelessWidget {
     this.isLoading = false,
     this.icon,
     this.width,
+    this.badgeText,
   });
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedPressable(
-      onTap: onPressed == null || isLoading ? null : onPressed,
-      pressedScale: 0.97,
-      child: SizedBox(
-        width: width ?? double.infinity,
-        height: 56,
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: onPressed == null
-                ? null
-                : VinRColors.goldGradient,
-            color: onPressed == null ? VinRColors.surface : null,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: onPressed == null
-                ? []
-                : [
-                    BoxShadow(
-                      color: VinRColors.gold.withValues(alpha: 0.4),
-                      blurRadius: 20,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-          ),
-          child: ElevatedButton(
-            onPressed: isLoading ? null : onPressed,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            child: isLoading
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
-                    ),
-                  )
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (icon != null) ...[
-                        Icon(icon, color: Colors.black, size: 20),
-                        const SizedBox(width: 8),
-                      ],
-                      Text(
-                        text,
-                        style: VinRTypography.body.copyWith(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                    ],
-                  ),
-          ),
-        ),
-      ),
+    return Tactile3DButton(
+      text: text,
+      onPressed: onPressed,
+      variant: TactileButtonVariant.gold,
+      isLoading: isLoading,
+      icon: icon,
+      width: width,
+      badgeText: badgeText,
     );
   }
 }

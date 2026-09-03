@@ -10,6 +10,7 @@ import '../../../core/widgets/avatar_ring.dart';
 import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/gold_button.dart';
 import '../../../core/widgets/vinr_toast.dart';
+import '../../../core/widgets/celebration_confetti.dart';
 import '../../../core/repositories/journal_repository.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../streak/providers/streak_provider.dart';
@@ -25,6 +26,7 @@ class _JournalScreenState extends ConsumerState<JournalScreen> {
   String _viewMode = 'write'; // 'write' | 'entries'
   String _searchQuery = '';
   bool _isLoading = false;
+  bool _isSaving = false;
 
   final _journalRepo = JournalRepository();
 
@@ -75,6 +77,8 @@ class _JournalScreenState extends ConsumerState<JournalScreen> {
   }
 
   void _saveEntry() async {
+    if (_isSaving) return;
+
     final g1 = _g1Controller.text.trim();
     final g2 = _g2Controller.text.trim();
     final g3 = _g3Controller.text.trim();
@@ -90,48 +94,57 @@ class _JournalScreenState extends ConsumerState<JournalScreen> {
       return;
     }
 
-    final items = [if (g1.isNotEmpty) g1, if (g2.isNotEmpty) g2, if (g3.isNotEmpty) g3];
-    final aiReflection = await _journalRepo.generateAiReflection(
-      note.isNotEmpty ? note : items.join(', '),
-      mood: 'Balanced',
-    );
+    setState(() => _isSaving = true);
 
-    final tempEntry = {
-      'id': 'entry_${DateTime.now().millisecondsSinceEpoch}',
-      'date': 'Today, ${_formatCurrentTime()}',
-      'items': items.isNotEmpty ? items : ['Logged personal reflection'],
-      'note': note.isNotEmpty ? note : 'Reflected on personal growth and daily wins.',
-      'tags': ['Daily Gratitude'],
-      'aiReflection': aiReflection,
-    };
-
-    if (mounted) {
-      setState(() {
-        _savedEntries.insert(0, tempEntry);
-        _g1Controller.clear();
-        _g2Controller.clear();
-        _g3Controller.clear();
-        _reflectionController.clear();
-        _viewMode = 'entries';
-      });
-
-      VinRToast.show(
-        context,
-        message: 'Gratitude Entry & AI Reflection Saved!',
-        icon: LucideIcons.sparkles,
-        iconColor: VinRColors.gold,
+    try {
+      final items = [if (g1.isNotEmpty) g1, if (g2.isNotEmpty) g2, if (g3.isNotEmpty) g3];
+      final aiReflection = await _journalRepo.generateAiReflection(
+        note.isNotEmpty ? note : items.join(', '),
+        mood: 'Balanced',
       );
-    }
 
+      final tempEntry = {
+        'id': 'entry_${DateTime.now().millisecondsSinceEpoch}',
+        'date': 'Today, ${_formatCurrentTime()}',
+        'items': items.isNotEmpty ? items : ['Logged personal reflection'],
+        'note': note.isNotEmpty ? note : 'Reflected on personal growth and daily wins.',
+        'tags': ['Daily Gratitude'],
+        'aiReflection': aiReflection,
+      };
 
-    final result = await _journalRepo.createEntry(
-      gratitudeItems: items,
-      reflectionText: note,
-      mood: 'Balanced',
-    );
+      if (mounted) {
+        setState(() {
+          _savedEntries.insert(0, tempEntry);
+          _g1Controller.clear();
+          _g2Controller.clear();
+          _g3Controller.clear();
+          _reflectionController.clear();
+          _viewMode = 'entries';
+        });
 
-    if (result != null && mounted) {
-      _loadEntries();
+        CelebrationOverlay.show(context);
+
+        VinRToast.show(
+          context,
+          message: 'Gratitude Entry & AI Reflection Saved! (+40 XP)',
+          icon: LucideIcons.sparkles,
+          iconColor: VinRColors.gold,
+        );
+      }
+
+      final result = await _journalRepo.createEntry(
+        gratitudeItems: items,
+        reflectionText: note,
+        mood: 'Balanced',
+      );
+
+      if (result != null && mounted) {
+        _loadEntries();
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 
@@ -179,8 +192,9 @@ class _JournalScreenState extends ConsumerState<JournalScreen> {
       return dateMatch || noteMatch || itemsMatch;
     }).toList();
 
-    return Scaffold(
-      body: AmbientBackground(
+    return CelebrationOverlay(
+      child: Scaffold(
+        body: AmbientBackground(
         child: SafeArea(
           child: ListView(
             padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 140),
@@ -459,8 +473,10 @@ class _JournalScreenState extends ConsumerState<JournalScreen> {
                 const SizedBox(height: 24),
 
                 GoldButton(
-                  text: 'Save Gratitude Journal Entry →',
-                  onPressed: _saveEntry,
+                  text: _isSaving ? 'Saving & Generating Reflection...' : 'Save Gratitude Journal Entry →',
+                  badgeText: '+40 XP',
+                  isLoading: _isSaving,
+                  onPressed: _isSaving ? null : _saveEntry,
                 ),
               ]
 
@@ -603,6 +619,7 @@ class _JournalScreenState extends ConsumerState<JournalScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

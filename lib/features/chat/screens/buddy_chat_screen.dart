@@ -106,6 +106,8 @@ class _BuddyChatScreenState extends ConsumerState<BuddyChatScreen>
   bool _voiceModeEnabled = false;
   ChatMessageModel? _replyingTo;
   String? _currentlyPlayingAudioId;
+  StreamSubscription? _playerCompleteSubscription;
+  StreamSubscription? _ttsPlayingSubscription;
 
   late AnimationController _pulseController;
   late Animation<double> _pulseScale;
@@ -119,11 +121,11 @@ class _BuddyChatScreenState extends ConsumerState<BuddyChatScreen>
     _speechToText = stt.SpeechToText();
     _initStt();
 
-    _audioPlayer.onPlayerComplete.listen((_) {
+    _playerCompleteSubscription = _audioPlayer.onPlayerComplete.listen((_) {
       if (mounted) setState(() => _currentlyPlayingAudioId = null);
     });
 
-    TextToSpeechService.instance.playingStateStream.listen((isPlaying) {
+    _ttsPlayingSubscription = TextToSpeechService.instance.playingStateStream.listen((isPlaying) {
       if (!isPlaying && mounted && _currentlyPlayingAudioId != null) {
         setState(() => _currentlyPlayingAudioId = null);
       }
@@ -152,6 +154,8 @@ class _BuddyChatScreenState extends ConsumerState<BuddyChatScreen>
 
   @override
   void dispose() {
+    _playerCompleteSubscription?.cancel();
+    _ttsPlayingSubscription?.cancel();
     _speechToText.stop();
     TextToSpeechService.instance.stop();
     _messageController.dispose();

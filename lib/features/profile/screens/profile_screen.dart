@@ -10,6 +10,8 @@ import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/avatar_ring.dart';
 import '../../../core/widgets/streak_counter_badge.dart';
 import '../../../core/widgets/section_header.dart';
+import '../../../core/widgets/celebration_confetti.dart';
+import '../../../core/widgets/vinr_toast.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../streak/providers/streak_provider.dart';
 
@@ -91,11 +93,16 @@ class ProfileScreen extends ConsumerWidget {
     // Next trophy target
     final nextTrophy = lockedTrophies.isNotEmpty ? lockedTrophies.first : null;
 
-    return Scaffold(
-      body: AmbientBackground(
-        child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 140),
+    final totalXp = (currentDays * 100) + (streak.currentStreak * 25);
+    final currentLevel = (totalXp ~/ 300) + 1;
+    final xpInCurrentLevel = totalXp % 300;
+
+    return CelebrationOverlay(
+      child: Scaffold(
+        body: AmbientBackground(
+          child: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 140),
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -141,7 +148,83 @@ class ProfileScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 20),
+
+              // Gamified Level & XP Card
+              GlassContainer(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: VinRColors.xpGem.withValues(alpha: 0.18),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(LucideIcons.zap, size: 18, color: VinRColors.xpGem),
+                            ),
+                            const SizedBox(width: 10),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'LEVEL $currentLevel CHAMPION',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    color: context.textColor,
+                                    fontSize: 13,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                                Text(
+                                  'Total $totalXp XP Earned',
+                                  style: TextStyle(
+                                    color: context.textMutedColor,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: context.goldColor.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: context.goldColor.withValues(alpha: 0.3)),
+                          ),
+                          child: Text(
+                            '$xpInCurrentLevel / 300 XP',
+                            style: TextStyle(
+                              color: context.goldColor,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: LinearProgressIndicator(
+                        value: xpInCurrentLevel / 300.0,
+                        backgroundColor: context.borderColor,
+                        color: VinRColors.xpGem,
+                        minHeight: 7,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
 
               // Achievements & Trophy Room Header
               SectionHeader(
@@ -233,6 +316,15 @@ class ProfileScreen extends ConsumerWidget {
                     final trophy = unlockedTrophies[index];
                     return GlassContainer(
                       padding: const EdgeInsets.all(12),
+                      onTap: () {
+                        CelebrationOverlay.show(context);
+                        VinRToast.show(
+                          context,
+                          message: '${trophy.title}: ${trophy.description}',
+                          icon: trophy.icon,
+                          iconColor: context.goldColor,
+                        );
+                      },
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -306,6 +398,7 @@ class ProfileScreen extends ConsumerWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

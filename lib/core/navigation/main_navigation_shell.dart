@@ -100,12 +100,12 @@ class MainNavigationShell extends StatelessWidget {
               onTap: () => _onItemTapped(0),
             ),
 
-            // Tab 2: Check-in
+            // Tab 2: Journey & Habit Quests
             _buildNavItem(
               index: 1,
               currentIndex: currentIndex,
-              icon: LucideIcons.heart,
-              label: 'CHECK-IN',
+              icon: LucideIcons.compass,
+              label: 'JOURNEY',
               activeColor: activeGold,
               inactiveColor: inactiveColor,
               onTap: () => _onItemTapped(1),

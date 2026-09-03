@@ -54,4 +54,16 @@ class VinRColors {
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
+
+  // Duolingo-Inspired 3D Tactile Bevel Depths
+  static const Color goldBevel = Color(0xFF9E7528);
+  static const Color emeraldBevel = Color(0xFF288A68);
+  static const Color sapphireBevel = Color(0xFF2B639B);
+  static const Color crimsonBevel = Color(0xFFA63232);
+  static const Color surfaceBevel = Color(0xFF090C15);
+
+  // Gamification & XP Tokens
+  static const Color xpGem = Color(0xFFFFB800);
+  static const Color questDone = Color(0xFF4ECBA0);
+  static const Color questPending = Color(0x33B0B8D4);
 }

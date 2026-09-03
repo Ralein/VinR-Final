@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/memory_service.dart';
 import '../../domain/ai_memory.dart';
@@ -31,6 +32,8 @@ class AiModelState {
 
 class AiModelNotifier extends StateNotifier<AiModelState> {
   final ModelManager _manager = ModelManager.instance;
+  StreamSubscription<ModelState>? _stateSubscription;
+  StreamSubscription<double>? _progressSubscription;
 
   AiModelNotifier()
       : super(
@@ -45,7 +48,8 @@ class AiModelNotifier extends StateNotifier<AiModelState> {
   }
 
   Future<void> _init() async {
-    _manager.stateStream.listen((state) {
+    _stateSubscription = _manager.stateStream.listen((state) {
+      if (!mounted) return;
       this.state = AiModelState(
         state: state,
         progress: _manager.downloadProgress,
@@ -55,7 +59,8 @@ class AiModelNotifier extends StateNotifier<AiModelState> {
       );
     });
 
-    _manager.progressStream.listen((progress) {
+    _progressSubscription = _manager.progressStream.listen((progress) {
+      if (!mounted) return;
       state = AiModelState(
         state: _manager.state,
         progress: progress,
@@ -66,6 +71,13 @@ class AiModelNotifier extends StateNotifier<AiModelState> {
     });
 
     await _manager.checkModelStatus();
+  }
+
+  @override
+  void dispose() {
+    _stateSubscription?.cancel();
+    _progressSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> checkStatus() async {
