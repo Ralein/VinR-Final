@@ -12,7 +12,7 @@ enum TactileButtonVariant {
   surface,
 }
 
-/// A modern, 21st-century 3D tactile button inspired by Duolingo.
+/// A modern, 21st-century 3D tactile button engineered for the VinR Design System.
 ///
 /// Features a realistic bottom bevel edge (4px depth) and physically
 /// compresses downward when pressed, accompanied by springy tactile feedback.

@@ -24,7 +24,7 @@ class DailyQuestItem {
   });
 }
 
-/// Duolingo-style Daily Quests & XP tracker card.
+/// VinR Daily Quests & XP tracker card.
 class DailyQuestsCard extends StatelessWidget {
   final bool isCheckinDone;
   final bool isJournalDone;

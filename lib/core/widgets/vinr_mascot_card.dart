@@ -7,7 +7,7 @@ import '../theme/vinr_colors.dart';
 import '../theme/vinr_typography.dart';
 import 'glass_container.dart';
 
-/// Interactive Duolingo-style Mascot & Encouragement Speech Bubble.
+/// Interactive VinR Companion Mascot & Encouragement Speech Bubble.
 class VinRMascotCard extends StatefulWidget {
   final int streakDays;
   final bool isCompletedToday;

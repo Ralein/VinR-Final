@@ -3,12 +3,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:vinr_app/core/widgets/tactile_3d_button.dart';
 import 'package:vinr_app/core/widgets/celebration_confetti.dart';
-import 'package:vinr_app/core/widgets/duolingo_path_node.dart';
+import 'package:vinr_app/core/widgets/vinr_path_node.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('Duolingo-Style Tactile UI Components Tests', () {
+  group('VinR Tactile UI Components Tests', () {
     testWidgets('Tactile3DButton renders text, badge, and handles tap callback', (WidgetTester tester) async {
       bool wasTapped = false;
 
@@ -37,14 +37,14 @@ void main() {
       expect(wasTapped, isTrue);
     });
 
-    testWidgets('DuolingoPathNode renders active and completed states', (WidgetTester tester) async {
+    testWidgets('VinRPathNode renders active and completed states', (WidgetTester tester) async {
       bool nodeTapped = false;
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: Center(
-              child: DuolingoPathNode(
+              child: VinRPathNode(
                 dayNumber: 1,
                 title: 'Intention & Reset',
                 category: 'Mindset',

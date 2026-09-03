@@ -55,7 +55,7 @@ class VinRColors {
     end: Alignment.bottomCenter,
   );
 
-  // Duolingo-Inspired 3D Tactile Bevel Depths
+  // VinR 3D Tactile Bevel Depths
   static const Color goldBevel = Color(0xFF9E7528);
   static const Color emeraldBevel = Color(0xFF288A68);
   static const Color sapphireBevel = Color(0xFF2B639B);

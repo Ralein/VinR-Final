@@ -27,7 +27,7 @@ class CelebrationParticle {
   });
 }
 
-/// A lightweight, celebratory particle explosion widget inspired by Duolingo.
+/// A lightweight, celebratory particle explosion widget for VinR habit milestones.
 /// Spawns golden stars and vibrant confetti ribbons upon completing goals/streaks.
 class CelebrationOverlay extends StatefulWidget {
   final Widget child;

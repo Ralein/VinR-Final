@@ -308,7 +308,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
                   const SizedBox(height: 16),
                 ],
 
-                // Duolingo-style Daily Quests Checklist
+                // VinR Daily Quests Checklist
                 DailyQuestsCard(
                   isCheckinDone: streak.isCompletedToday,
                 ),
