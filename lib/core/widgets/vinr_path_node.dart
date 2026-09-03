@@ -20,6 +20,7 @@ class VinRPathNode extends StatefulWidget {
   final IconData icon;
   final PathNodeState state;
   final bool isMilestone;
+  final String? subtitle;
   final VoidCallback onTap;
 
   const VinRPathNode({
@@ -30,6 +31,7 @@ class VinRPathNode extends StatefulWidget {
     required this.icon,
     required this.state,
     this.isMilestone = false,
+    this.subtitle,
     required this.onTap,
   });
 
@@ -242,20 +244,53 @@ class _VinRPathNodeState extends State<VinRPathNode> {
         ),
 
         const SizedBox(height: 6),
-        // Day Label Text
+        // Day Label Text & Task Pill
         GestureDetector(
           onTap: widget.onTap,
-          child: Text(
-            'Day ${widget.dayNumber}',
-            style: VinRTypography.label.copyWith(
-              color: widget.state == PathNodeState.locked
-                  ? context.textGhostColor
-                  : context.textColor,
-              fontWeight: widget.state == PathNodeState.active
-                  ? FontWeight.bold
-                  : FontWeight.normal,
-              fontSize: 11,
-            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Day ${widget.dayNumber}',
+                style: VinRTypography.label.copyWith(
+                  color: widget.state == PathNodeState.locked
+                      ? context.textGhostColor
+                      : context.textColor,
+                  fontWeight: widget.state == PathNodeState.active
+                      ? FontWeight.bold
+                      : FontWeight.normal,
+                  fontSize: 11,
+                ),
+              ),
+              if (widget.subtitle != null) ...[
+                const SizedBox(height: 2),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                  decoration: BoxDecoration(
+                    color: widget.state == PathNodeState.active
+                        ? VinRColors.emerald.withValues(alpha: 0.15)
+                        : (isLight ? const Color(0xFFECE7DC) : VinRColors.surface),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: widget.state == PathNodeState.active
+                          ? VinRColors.emerald.withValues(alpha: 0.3)
+                          : context.borderColor,
+                      width: 0.5,
+                    ),
+                  ),
+                  child: Text(
+                    widget.subtitle!,
+                    style: TextStyle(
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.bold,
+                      color: widget.state == PathNodeState.active
+                          ? VinRColors.emerald
+                          : context.textMutedColor,
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ],
