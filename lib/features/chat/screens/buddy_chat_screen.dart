@@ -274,8 +274,8 @@ class _BuddyChatScreenState extends ConsumerState<BuddyChatScreen>
     setState(() => _voiceModeEnabled = val);
 
     final notificationText = val
-        ? '🎙️ Switched to Voice Mode — VinR Coach will read responses aloud'
-        : '🔇 Switched to Text Mode — Spoken replies muted';
+        ? 'Switched to Voice Mode — VinR Coach will read responses aloud'
+        : 'Switched to Text Mode — Spoken replies muted';
 
     ref.read(chatProvider.notifier).addSystemNotification(notificationText);
 
@@ -1524,7 +1524,7 @@ class _BuddyChatScreenState extends ConsumerState<BuddyChatScreen>
           Expanded(
             child: Text(
               _isLocked
-                  ? '🔒 Hands-free locked'
+                  ? 'Hands-free locked'
                   : (_dragY < -25 ? 'Release to lock ↑' : '← Swipe to cancel  ·  Slide up to lock'),
               style: TextStyle(
                 color: (_isLocked || _dragY < -25) ? activeGold : mutedTextColor,
