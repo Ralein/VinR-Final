@@ -441,8 +441,7 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
               const SizedBox(height: 22),
               Tactile3DButton(
                 text: isUnlocked ? 'Celebrate & Ascend' : 'Keep Pushing Forward',
-                backgroundColor: isUnlocked ? goldColor : Colors.white.withValues(alpha: 0.15),
-                textColor: isUnlocked ? Colors.black : Colors.white,
+                variant: isUnlocked ? TactileButtonVariant.gold : TactileButtonVariant.surface,
                 height: 50,
                 borderRadius: 16,
                 onPressed: () {
@@ -948,53 +947,6 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
           ),
         ],
       ),
-    );
-  }
-
-  // ==========================================================================
-  // SECTION PICKER
-  // ==========================================================================
-  void _showSectionPicker(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      useRootNavigator: true,
-      backgroundColor: Colors.transparent,
-      builder: (modalCtx) {
-        final isLight = context.isLight;
-        return Container(
-          decoration: BoxDecoration(
-            color: isLight ? Colors.white : VinRColors.elevated,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-          child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2)))),
-                const SizedBox(height: 16),
-                Text('SELECT ROADMAP SECTION', style: VinRTypography.label.copyWith(color: context.goldColor, fontSize: 11, letterSpacing: 1.0)),
-                const SizedBox(height: 12),
-                _buildSectionPickerItem(title: 'Section 1: Genesis', subtitle: 'Days 1-7 \u2022 Mindset Foundations', icon: LucideIcons.sparkles, onTap: () { Navigator.pop(modalCtx); _scrollToPhase(1); }),
-                _buildSectionPickerItem(title: 'Section 2: Crucible', subtitle: 'Days 8-14 \u2022 Friction & Mental Grit', icon: LucideIcons.flame, onTap: () { Navigator.pop(modalCtx); _scrollToPhase(2); }),
-                _buildSectionPickerItem(title: 'Section 3: Pinnacle', subtitle: 'Days 15-21 \u2022 Identity & Sovereign Crown', icon: LucideIcons.crown, onTap: () { Navigator.pop(modalCtx); _scrollToPhase(3); }),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildSectionPickerItem({required String title, required String subtitle, required IconData icon, required VoidCallback onTap}) {
-    return ListTile(
-      leading: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: context.goldColor.withValues(alpha: 0.15), shape: BoxShape.circle), child: Icon(icon, color: context.goldColor, size: 18)),
-      title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: context.textColor, fontSize: 14)),
-      subtitle: Text(subtitle, style: TextStyle(color: context.textMutedColor, fontSize: 12)),
-      trailing: Icon(LucideIcons.chevronRight, size: 16, color: context.textMutedColor),
-      onTap: onTap,
-      contentPadding: EdgeInsets.zero,
     );
   }
 

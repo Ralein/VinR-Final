@@ -184,7 +184,7 @@ class StoicCodexModal extends StatelessWidget {
                 const SizedBox(height: 12),
                 Text(
                   sectionTitle,
-                  style: VinRTypography.headlineMedium.copyWith(
+                  style: VinRTypography.h2.copyWith(
                     color: context.textColor,
                     fontWeight: FontWeight.w900,
                     letterSpacing: -0.5,
@@ -308,8 +308,7 @@ class StoicCodexModal extends StatelessWidget {
                 // Bottom Action Button
                 Tactile3DButton(
                   text: 'Embody These Principles',
-                  backgroundColor: goldColor,
-                  textColor: Colors.black,
+                  variant: TactileButtonVariant.gold,
                   height: 52,
                   borderRadius: 16,
                   onPressed: () {
