@@ -14,9 +14,13 @@ import '../../../core/widgets/ambient_background.dart';
 import '../../../core/widgets/celebration_confetti.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/tactile_3d_button.dart';
+import '../../../core/widgets/vinr_node_callout.dart';
 import '../../../core/widgets/vinr_path_node.dart';
+import '../../../core/widgets/vinr_relic_chest_node.dart';
 import '../../../core/widgets/vinr_toast.dart';
 import '../../streak/providers/streak_provider.dart';
+import '../widgets/journey_track_switcher.dart';
+import '../widgets/stoic_codex_modal.dart';
 
 // =============================================================================
 // DATA MODELS
@@ -104,6 +108,8 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
   final Set<String> _todayCompletedTaskIds = {};
   final ScrollController _scrollController = ScrollController();
   int _currentQuoteIndex = 0;
+  bool _showJumpToActive = false;
+  bool _isJumpDirectionDown = true;
 
   // =============================================================================
   // ROADMAP DATA (21 Days of Growth)
@@ -264,7 +270,35 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
     _shimmerController = AnimationController(vsync: this, duration: const Duration(milliseconds: 2400))..repeat();
     _shimmerAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _shimmerController, curve: Curves.linear));
 
+    _scrollController.addListener(_onScrollUpdated);
+
     WidgetsBinding.instance.addPostFrameCallback((_) => _autoScrollToActive());
+  }
+
+  void _onScrollUpdated() {
+    if (!_scrollController.hasClients) return;
+    final streakState = ref.read(streakProvider);
+    final todayDay = (streakState.totalDaysCompleted + 1).clamp(1, 21);
+    double activeTarget = 120.0;
+    for (int i = 0; i < todayDay - 1; i++) {
+      activeTarget += 165.0;
+      if (i == 6) activeTarget += 150.0;
+      if (i == 13) activeTarget += 150.0;
+    }
+    final screenH = MediaQuery.of(context).size.height;
+    final currentScroll = _scrollController.offset;
+    final centeredActiveOffset = (activeTarget - screenH / 2 + 60).clamp(0.0, double.infinity);
+
+    final distance = currentScroll - centeredActiveOffset;
+    final shouldShow = distance.abs() > 280.0;
+    final directionDown = distance < 0;
+
+    if (shouldShow != _showJumpToActive || directionDown != _isJumpDirectionDown) {
+      setState(() {
+        _showJumpToActive = shouldShow;
+        _isJumpDirectionDown = directionDown;
+      });
+    }
   }
 
   void _startQuoteLoop() async {
@@ -303,11 +337,126 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScrollUpdated);
     _quoteFadeController.dispose();
     _xpCountController.dispose();
     _shimmerController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onNodeTapped(BuildContext context, DayRoadmapItem item, int totalDaysCompleted, bool isCompletedToday) {
+    final isCompleted = item.dayNumber <= totalDaysCompleted;
+    final isCurrent = item.dayNumber == totalDaysCompleted + 1 && !isCompletedToday;
+
+    VinRNodeCalloutBubble.show(
+      context,
+      dayNumber: item.dayNumber,
+      title: item.title,
+      category: item.category,
+      catalystCount: item.tasks.length,
+      totalXP: item.tasks.fold<int>(0, (sum, t) => sum + t.xpReward),
+      isCompleted: isCompleted,
+      isCurrent: isCurrent,
+      onStartMission: () {
+        _openQuestBottomSheet(context, item, totalDaysCompleted, isCompletedToday);
+      },
+      onViewCatalysts: () {
+        _openQuestBottomSheet(context, item, totalDaysCompleted, isCompletedToday);
+      },
+    );
+  }
+
+  void _openMilestoneChestModal(BuildContext context, int dayNumber, String title, bool isUnlocked) {
+    HapticFeedback.mediumImpact();
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      builder: (modalCtx) {
+        final isLight = Theme.of(modalCtx).brightness == Brightness.light;
+        final goldColor = isLight ? const Color(0xFF9E6E1A) : VinRColors.gold;
+
+        return Container(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 30),
+          decoration: BoxDecoration(
+            color: isLight ? Colors.white : VinRColors.backgroundElevated,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border(
+              top: BorderSide(
+                color: isUnlocked ? goldColor.withValues(alpha: 0.5) : (isLight ? const Color(0xFFE2DDD2) : VinRColors.borderAsh),
+                width: 1.5,
+              ),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(width: 36, height: 4, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2))),
+              const SizedBox(height: 18),
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: isUnlocked ? goldColor.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isUnlocked ? goldColor : Colors.white.withValues(alpha: 0.1),
+                    width: 2,
+                  ),
+                ),
+                child: Icon(
+                  isUnlocked ? LucideIcons.crown : LucideIcons.lock,
+                  size: 36,
+                  color: isUnlocked ? goldColor : const Color(0xFF7E8EA8),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'DAY $dayNumber \u2022 $title',
+                style: TextStyle(
+                  color: isUnlocked ? goldColor : Theme.of(modalCtx).textTheme.bodySmall?.color,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.0,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                isUnlocked ? 'Stoic Relic Claimed!' : 'Relic Chest Locked',
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                isUnlocked
+                    ? 'You proved your resilience by maintaining your standard across all $dayNumber days. You have received +100 XP.'
+                    : 'Conquer all preceding days up to Day $dayNumber to unlock this ancient Stoic relic and earn +100 XP.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isLight ? const Color(0xFF5F584C) : const Color(0xFF9EABB8),
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 22),
+              Tactile3DButton(
+                text: isUnlocked ? 'Celebrate & Ascend' : 'Keep Pushing Forward',
+                backgroundColor: isUnlocked ? goldColor : Colors.white.withValues(alpha: 0.15),
+                textColor: isUnlocked ? Colors.black : Colors.white,
+                height: 50,
+                borderRadius: 16,
+                onPressed: () {
+                  Navigator.pop(modalCtx);
+                  if (isUnlocked) {
+                    CelebrationOverlay.show(context);
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void _toggleTask(String taskId) {
@@ -476,6 +625,62 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
                     streak: streak,
                   ),
                 ),
+
+                // Floating Jump-to-Active Button (Duolingo signature pattern)
+                if (_showJumpToActive)
+                  Positioned(
+                    bottom: 110,
+                    right: 18,
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.mediumImpact();
+                        _autoScrollToActive();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8.5),
+                        decoration: BoxDecoration(
+                          color: isLight ? Colors.white : VinRColors.backgroundElevated,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: activeGold.withValues(alpha: 0.65),
+                            width: 1.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.45),
+                              blurRadius: 16,
+                              offset: const Offset(0, 4),
+                            ),
+                            BoxShadow(
+                              color: activeGold.withValues(alpha: 0.25),
+                              blurRadius: 12,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _isJumpDirectionDown ? LucideIcons.arrowDown : LucideIcons.arrowUp,
+                              size: 15,
+                              color: activeGold,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'TODAY',
+                              style: TextStyle(
+                                color: activeGold,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ).animate().fadeIn(duration: 200.ms).scale(begin: const Offset(0.85, 0.85), end: const Offset(1, 1)),
+                  ),
               ],
             ),
           ),
@@ -519,7 +724,15 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
             children: [
               // Section Selector Dropdown Chip
               GestureDetector(
-                onTap: () => _showSectionPicker(context),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  JourneyTrackSwitcher.show(
+                    context,
+                    currentPhaseIndex: currentPhaseIndex,
+                    totalDaysCompleted: totalDaysCompleted,
+                    onSelectPhase: (phase) => _scrollToPhase(phase),
+                  );
+                },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
                   decoration: BoxDecoration(
@@ -598,7 +811,7 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
 
           const SizedBox(height: 10),
 
-          // Row 2: Phase Subtitle + Progress Fraction
+          // Row 2: Phase Subtitle + Progress Fraction + Codex Button
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -625,20 +838,47 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isLight ? const Color(0xFFECE7DB) : VinRColors.backgroundAsh,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '$completedInPhase of 7 Cleared',
-                  style: TextStyle(
-                    color: activeGold,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isLight ? const Color(0xFFECE7DB) : VinRColors.backgroundAsh,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '$completedInPhase of 7 Cleared',
+                      style: TextStyle(
+                        color: activeGold,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 7),
+                  // Duolingo-style Unit Codex / Field Guide Button
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      StoicCodexModal.show(
+                        context,
+                        sectionNumber: currentPhaseIndex,
+                        sectionTitle: currentPhaseTitle,
+                        sectionTheme: currentPhaseSubtitle,
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: activeGold.withValues(alpha: isLight ? 0.12 : 0.16),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: activeGold.withValues(alpha: 0.35), width: 0.8),
+                      ),
+                      child: Icon(LucideIcons.bookOpen, size: 14, color: activeGold),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -821,12 +1061,70 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
                 isLight: isLight,
               ),
 
-            // Node with Living Blink (Isolated performance widget!)
-            Transform.translate(
-              offset: Offset(currentXOffset, 0),
-              child: isCurrent
-                  ? _ActiveBlinkingNode(
-                      child: VinRPathNode(
+            // Node / Relic Chest (Duolingo-inspired Milestone Chests on the serpentine path)
+            if (dayNum == 7)
+              Transform.translate(
+                offset: Offset(currentXOffset, 0),
+                child: VinRRelicChestNode(
+                  milestoneDay: 7,
+                  title: 'Genesis Stoic Relic',
+                  rewardXP: '+100 XP',
+                  state: streak.totalDaysCompleted >= 7
+                      ? RelicChestState.claimed
+                      : (dayNum == streak.totalDaysCompleted + 1 && !streak.isCompletedToday
+                          ? RelicChestState.readyToClaim
+                          : RelicChestState.locked),
+                  onTap: () {
+                    if (streak.totalDaysCompleted >= 7) {
+                      _openMilestoneChestModal(context, 7, 'Genesis Relic', true);
+                    } else if (dayNum == streak.totalDaysCompleted + 1 && !streak.isCompletedToday) {
+                      _onNodeTapped(context, item, streak.totalDaysCompleted, streak.isCompletedToday);
+                    } else {
+                      _openMilestoneChestModal(context, 7, 'Genesis Relic', false);
+                    }
+                  },
+                ),
+              )
+            else if (dayNum == 14)
+              Transform.translate(
+                offset: Offset(currentXOffset, 0),
+                child: VinRRelicChestNode(
+                  milestoneDay: 14,
+                  title: 'Crucible Fortitude Relic',
+                  rewardXP: '+100 XP',
+                  state: streak.totalDaysCompleted >= 14
+                      ? RelicChestState.claimed
+                      : (dayNum == streak.totalDaysCompleted + 1 && !streak.isCompletedToday
+                          ? RelicChestState.readyToClaim
+                          : RelicChestState.locked),
+                  onTap: () {
+                    if (streak.totalDaysCompleted >= 14) {
+                      _openMilestoneChestModal(context, 14, 'Crucible Fortitude Relic', true);
+                    } else if (dayNum == streak.totalDaysCompleted + 1 && !streak.isCompletedToday) {
+                      _onNodeTapped(context, item, streak.totalDaysCompleted, streak.isCompletedToday);
+                    } else {
+                      _openMilestoneChestModal(context, 14, 'Crucible Fortitude Relic', false);
+                    }
+                  },
+                ),
+              )
+            else
+              Transform.translate(
+                offset: Offset(currentXOffset, 0),
+                child: isCurrent
+                    ? _ActiveBlinkingNode(
+                        child: VinRPathNode(
+                          dayNumber: dayNum,
+                          title: item.title,
+                          category: item.category,
+                          subtitle: '${item.tasks.length} Catalysts',
+                          icon: isMilestone ? (dayNum == 21 ? LucideIcons.crown : LucideIcons.trophy) : item.icon,
+                          state: nodeState,
+                          isMilestone: isMilestone,
+                          onTap: () => _onNodeTapped(context, item, streak.totalDaysCompleted, streak.isCompletedToday),
+                        ),
+                      )
+                    : VinRPathNode(
                         dayNumber: dayNum,
                         title: item.title,
                         category: item.category,
@@ -834,20 +1132,9 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
                         icon: isMilestone ? (dayNum == 21 ? LucideIcons.crown : LucideIcons.trophy) : item.icon,
                         state: nodeState,
                         isMilestone: isMilestone,
-                        onTap: () => _openQuestBottomSheet(context, item, streak.totalDaysCompleted, streak.isCompletedToday),
+                        onTap: () => _onNodeTapped(context, item, streak.totalDaysCompleted, streak.isCompletedToday),
                       ),
-                    )
-                  : VinRPathNode(
-                      dayNumber: dayNum,
-                      title: item.title,
-                      category: item.category,
-                      subtitle: '${item.tasks.length} Catalysts',
-                      icon: isMilestone ? (dayNum == 21 ? LucideIcons.crown : LucideIcons.trophy) : item.icon,
-                      state: nodeState,
-                      isMilestone: isMilestone,
-                      onTap: () => _openQuestBottomSheet(context, item, streak.totalDaysCompleted, streak.isCompletedToday),
-                    ),
-            ),
+              ),
 
             const SizedBox(height: 6),
 

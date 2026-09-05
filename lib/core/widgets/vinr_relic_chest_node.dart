@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../theme/theme_context.dart';
 import '../theme/vinr_colors.dart';
-import '../theme/vinr_motion.dart';
 import '../theme/vinr_typography.dart';
 import 'app_animations.dart';
 
@@ -44,7 +43,6 @@ class _VinRRelicChestNodeState extends State<VinRRelicChestNode> {
     final isLight = context.isLight;
     final isReady = widget.state == RelicChestState.readyToClaim;
     final isClaimed = widget.state == RelicChestState.claimed;
-    final isLocked = widget.state == RelicChestState.locked;
 
     // Palette per state
     final Color chestBodyColor = isClaimed
