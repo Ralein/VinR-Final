@@ -156,8 +156,8 @@ class _VinRPathNodeState extends State<VinRPathNode> {
 
         // Interactive 3D Node
         SizedBox(
-          width: nodeSize,
-          height: nodeSize + _depth,
+          width: nodeSize + 10,
+          height: nodeSize + _depth + 10,
           child: GestureDetector(
             onTapDown: (_) {
               HapticFeedback.lightImpact();
@@ -174,9 +174,23 @@ class _VinRPathNodeState extends State<VinRPathNode> {
             child: Stack(
               alignment: Alignment.center,
               children: [
+                // Concentric Outer Halo Ring (Duolingo signature active styling)
+                if (widget.state == PathNodeState.active)
+                  Container(
+                    width: nodeSize + 10,
+                    height: nodeSize + 10,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: VinRColors.emerald.withValues(alpha: 0.65),
+                        width: 2.5,
+                      ),
+                    ),
+                  ),
+
                 // 3D Bottom Bevel Base
                 Positioned(
-                  top: _depth,
+                  top: _depth + (widget.state == PathNodeState.active ? 5 : 0),
                   child: Container(
                     width: nodeSize,
                     height: nodeSize,
@@ -191,7 +205,7 @@ class _VinRPathNodeState extends State<VinRPathNode> {
                 AnimatedPositioned(
                   duration: const Duration(milliseconds: 70),
                   curve: Curves.easeOutQuad,
-                  top: currentTranslation,
+                  top: currentTranslation + (widget.state == PathNodeState.active ? 5 : 0),
                   child: Container(
                     width: nodeSize,
                     height: nodeSize,
@@ -200,10 +214,19 @@ class _VinRPathNodeState extends State<VinRPathNode> {
                       color: topColor,
                       gradient: widget.state == PathNodeState.completed
                           ? VinRColors.goldGradient
-                          : null,
+                          : (widget.state == PathNodeState.active
+                              ? const LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Color(0xFF34D399),
+                                    Color(0xFF10B981),
+                                  ],
+                                )
+                              : null),
                       border: Border.all(
                         color: widget.state == PathNodeState.active
-                            ? Colors.white.withValues(alpha: 0.85)
+                            ? Colors.white.withValues(alpha: 0.9)
                             : (widget.state == PathNodeState.completed
                                 ? Colors.white.withValues(alpha: 0.4)
                                 : (widget.state == PathNodeState.upcoming
