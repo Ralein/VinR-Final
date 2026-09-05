@@ -4,10 +4,18 @@ import 'package:flutter/material.dart';
 class VinRColors {
   VinRColors._();
 
-  // Backgrounds
+  // Backgrounds & Surfaces (Hierarchy System)
   static const Color voidBg = Color(0xFF07090F);
+  static const Color backgroundVoid = Color(0xFF07090F);
+  static const Color backgroundPrimary = Color(0xFF0A0D14);
   static const Color surface = Color(0xFF0F1320);
   static const Color elevated = Color(0xFF161C2E);
+  static const Color backgroundElevated = Color(0xFF10141D);
+  static const Color backgroundAsh = Color(0xFF17191F);
+  static const Color ashSurface = Color(0xFF17191F);
+  static const Color surfaceGlass = Color(0x0AFFFFFF); // 4% white
+  static const Color surfaceElevated = Color(0x12FFFFFF); // 7% white
+  static const Color borderAsh = Color(0x24FFFFFF); // 14% white border for ash cards
 
   // Brand Accents
   static const Color gold = Color(0xFFD4A853);

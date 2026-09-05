@@ -5,11 +5,14 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/layout/overlay_metrics.dart';
 import '../../../core/theme/theme_context.dart';
 import '../../../core/theme/vinr_colors.dart';
+import '../../../core/theme/vinr_motion.dart';
 import '../../../core/theme/vinr_typography.dart';
 import '../../../core/widgets/ambient_background.dart';
 import '../../../core/widgets/celebration_confetti.dart';
+import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/tactile_3d_button.dart';
 import '../../../core/widgets/vinr_path_node.dart';
 import '../../../core/widgets/vinr_toast.dart';
@@ -60,13 +63,13 @@ class DayRoadmapItem {
 }
 
 // =============================================================================
-// STOIC COMPASS QUOTES (Curated, full-breadth quotes that fit cleanly)
+// STOIC COMPASS QUOTES (Gentler Streak inspiration — gentle, encouraging)
 // =============================================================================
 const List<Map<String, String>> _compassQuotes = [
-  {'quote': 'Optimal momentum. Every brick laid today compounds forever.', 'author': 'VinR Compass'},
+  {'quote': 'Small daily habits compound into massive wins.', 'author': 'VinR Compass'},
   {'quote': 'You have power over your mind, not outside events.', 'author': 'Marcus Aurelius'},
   {'quote': 'Difficulties strengthen the mind, as labor does the body.', 'author': 'Seneca'},
-  {'quote': 'The impediment to action advances action. What stands in the way becomes the way.', 'author': 'Marcus Aurelius'},
+  {'quote': 'What stands in the way becomes the way.', 'author': 'Marcus Aurelius'},
   {'quote': 'He who conquers himself is the mightiest warrior.', 'author': 'Confucius'},
   {'quote': 'Waste no more time arguing what a good man should be. Be one.', 'author': 'Marcus Aurelius'},
   {'quote': 'It is not daily increase but daily decrease — hack away the inessential.', 'author': 'Bruce Lee'},
@@ -85,33 +88,25 @@ class JourneyScreen extends ConsumerStatefulWidget {
 
 class _JourneyScreenState extends ConsumerState<JourneyScreen>
     with TickerProviderStateMixin {
-  // Smooth organic breathing animation (gentle, high-end pulse)
-  late final AnimationController _pulseController;
-  late final Animation<double> _auraAnimation;
-
-  // Shimmer along upcoming path
-  late final AnimationController _shimmerController;
-  late final Animation<double> _shimmerAnimation;
-
-  // Quote transition
+  // Quote fade
   late final AnimationController _quoteFadeController;
   late final Animation<double> _quoteFadeAnimation;
 
-  // Animated XP counter
+  // XP counter
   late AnimationController _xpCountController;
   late Animation<int> _xpCountAnimation;
   int _targetXP = 0;
 
-  // Ripple indicator on the upcoming milestone
-  late final AnimationController _rippleController;
-  late final Animation<double> _rippleAnimation;
+  // Shimmer stardust animation on upcoming paths
+  late final AnimationController _shimmerController;
+  late final Animation<double> _shimmerAnimation;
 
   final Set<String> _todayCompletedTaskIds = {};
   final ScrollController _scrollController = ScrollController();
   int _currentQuoteIndex = 0;
 
   // =============================================================================
-  // ROADMAP DATA (21 Days)
+  // ROADMAP DATA (21 Days of Growth)
   // =============================================================================
   static final List<DayRoadmapItem> _roadmap = [
     DayRoadmapItem(dayNumber: 1, title: 'Intention & Reset', category: 'Mindset Foundation', phase: 'Phase 1: Genesis', phaseIndex: 1, icon: LucideIcons.compass, tasks: [
@@ -222,32 +217,31 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
   ];
 
   // =============================================================================
-  // CURATED SERPENTINE OFFSETS
-  // Maximum right offset is clamped to +65.0 so nodes NEVER touch or hide behind
-  // the AI Chathub floating action button on the right side of the screen!
+  // CURATED SERPENTINE OFFSETS (Duolingo / Gentler Streak flow)
+  // Milestones (7, 14, 21) are majestically centered at 0.0
   // =============================================================================
   static const List<double> _nodeOffsets = [
-    0.0,    // Day 1 (Origin, Centered)
-    48.0,   // Day 2 (Right)
-    65.0,   // Day 3 (Peak Right - Safe from AI Chathub)
-    25.0,   // Day 4 (Center-Right transition)
-    -45.0,  // Day 5 (Center-Left)
-    -75.0,  // Day 6 (Peak Left)
+    0.0,    // Day 1 (Genesis Origin - Centered)
+    65.0,   // Day 2 (Swing Right)
+    100.0,  // Day 3 (Peak Right)
+    50.0,   // Day 4 (Center-Right transition)
+    -45.0,  // Day 5 (Center-Left transition)
+    -95.0,  // Day 6 (Peak Left)
     0.0,    // Day 7 (Milestone 1 Genesis Chest - Centered)
-    48.0,   // Day 8 (Crucible Entry - Right)
-    65.0,   // Day 9 (Peak Right)
-    25.0,   // Day 10 (Center-Right)
+    60.0,   // Day 8 (Crucible Entry - Swing Right)
+    100.0,  // Day 9 (Peak Right)
+    45.0,   // Day 10 (Center-Right)
     -45.0,  // Day 11 (Center-Left)
-    -75.0,  // Day 12 (Peak Left)
-    -35.0,  // Day 13 (Center-Left)
+    -100.0, // Day 12 (Peak Left)
+    -55.0,  // Day 13 (Center-Left)
     0.0,    // Day 14 (Milestone 2 Fortitude Trophy - Centered)
-    45.0,   // Day 15 (Pinnacle Entry - Right)
-    65.0,   // Day 16 (Peak Right)
-    20.0,   // Day 17 (Center-Right)
+    55.0,   // Day 15 (Pinnacle Entry - Swing Right)
+    95.0,   // Day 16 (Peak Right)
+    35.0,   // Day 17 (Center-Right)
     -40.0,  // Day 18 (Center-Left)
-    -75.0,  // Day 19 (Peak Left)
-    -30.0,  // Day 20 (Center-Left)
-    0.0,    // Day 21 (Sovereign Summit Crown - Centered Finale)
+    -95.0,  // Day 19 (Peak Left)
+    -50.0,  // Day 20 (Center-Left)
+    0.0,    // Day 21 (Sovereign Summit Crown - Grand Centered Finale)
   ];
 
   double _getNodeOffset(int dayNumber) {
@@ -259,23 +253,16 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
   void initState() {
     super.initState();
 
-    // Smooth organic breathing pulse
-    _pulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 2200))..repeat(reverse: true);
-    _auraAnimation = Tween<double>(begin: 0.92, end: 1.08).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut));
-
-    _shimmerController = AnimationController(vsync: this, duration: const Duration(milliseconds: 2400))..repeat();
-    _shimmerAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _shimmerController, curve: Curves.linear));
-
-    _quoteFadeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
-    _quoteFadeAnimation = CurvedAnimation(parent: _quoteFadeController, curve: Curves.easeInOut);
+    _quoteFadeController = AnimationController(vsync: this, duration: VinRMotion.slow);
+    _quoteFadeAnimation = CurvedAnimation(parent: _quoteFadeController, curve: VinRMotion.standard);
     _quoteFadeController.forward();
     _startQuoteLoop();
 
     _xpCountController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000));
-    _xpCountAnimation = IntTween(begin: 0, end: 0).animate(CurvedAnimation(parent: _xpCountController, curve: Curves.easeOut));
+    _xpCountAnimation = IntTween(begin: 0, end: 0).animate(CurvedAnimation(parent: _xpCountController, curve: VinRMotion.decelerate));
 
-    _rippleController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1800))..repeat();
-    _rippleAnimation = CurvedAnimation(parent: _rippleController, curve: Curves.easeOut);
+    _shimmerController = AnimationController(vsync: this, duration: const Duration(milliseconds: 2400))..repeat();
+    _shimmerAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _shimmerController, curve: Curves.linear));
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _autoScrollToActive());
   }
@@ -295,7 +282,7 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
     if (newXP == _targetXP) return;
     final oldXP = _targetXP;
     _targetXP = newXP;
-    _xpCountAnimation = IntTween(begin: oldXP, end: newXP).animate(CurvedAnimation(parent: _xpCountController, curve: Curves.easeOut));
+    _xpCountAnimation = IntTween(begin: oldXP, end: newXP).animate(CurvedAnimation(parent: _xpCountController, curve: VinRMotion.decelerate));
     _xpCountController..reset()..forward();
   }
 
@@ -310,17 +297,15 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
       if (i == 13) offset += 150.0;
     }
     final screenH = MediaQuery.of(context).size.height;
-    final targetScroll = (offset - screenH / 2 + 50).clamp(0.0, double.infinity);
+    final targetScroll = (offset - screenH / 2 + 60).clamp(0.0, double.infinity);
     _scrollController.animateTo(targetScroll, duration: const Duration(milliseconds: 900), curve: Curves.easeInOutCubic);
   }
 
   @override
   void dispose() {
-    _pulseController.dispose();
-    _shimmerController.dispose();
     _quoteFadeController.dispose();
     _xpCountController.dispose();
-    _rippleController.dispose();
+    _shimmerController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -342,7 +327,7 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
     final isCurrent = item.dayNumber == totalDaysCompleted + 1 && !isCompletedToday;
     showModalBottomSheet(
       context: context,
-      useRootNavigator: true, // Guarantees modal renders ABOVE bottom navigation and FAB
+      useRootNavigator: true, // CRITICAL FIX: Modal sits ABOVE the bottom nav bar & AI ChatHub
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       useSafeArea: true,
@@ -367,7 +352,7 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
     double offset = 120.0;
     if (phaseIndex == 2) offset += 7 * 165.0 + 150.0;
     if (phaseIndex == 3) offset += 14 * 165.0 + 300.0;
-    _scrollController.animateTo(offset, duration: const Duration(milliseconds: 500), curve: Curves.easeInOutCubic);
+    _scrollController.animateTo(offset, duration: VinRMotion.slow, curve: Curves.easeInOutCubic);
   }
 
   @override
@@ -384,43 +369,97 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
     final currentPhaseSubtitle = currentPhaseIndex == 1 ? 'Mindset & Habits' : (currentPhaseIndex == 2 ? 'Resilience & Grit' : 'Sovereign Mastery');
     final screenWidth = MediaQuery.of(context).size.width;
     final contentWidth = screenWidth.clamp(320.0, 500.0);
+    final bottomReservedSpace = VinROverlayMetrics.bottomContentPadding(context);
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _updateXPCounter(totalDaysCompleted * 50));
 
     return CelebrationOverlay(
       child: Scaffold(
-        backgroundColor: isLight ? const Color(0xFFF5F2EC) : VinRColors.voidBg,
         body: AmbientBackground(
           child: SafeArea(
             child: Stack(
               children: [
-                // Scrollable roadmap trail with plenty of bottom padding for navigation bar and AI chathub clearance
+                // Scrollable narrative journey
                 CustomScrollView(
                   controller: _scrollController,
                   physics: const BouncingScrollPhysics(),
                   slivers: [
-                    const SliverToBoxAdapter(child: SizedBox(height: 155)),
+                    // Top padding for the floating header
+                    const SliverToBoxAdapter(child: SizedBox(height: 168)),
+
+                    // 1. Serpentine Roadmap Path
                     SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 200.0), // Ample bottom clearance
-                        child: Center(
-                          child: SizedBox(
-                            width: contentWidth,
-                            child: _buildRoadmapTrail(
+                      child: Center(
+                        child: SizedBox(
+                          width: contentWidth,
+                          child: _buildRoadmapTrail(
+                            context: context,
+                            streak: streak,
+                            todayDayNumber: todayDayNumber,
+                            activeGold: activeGold,
+                            isLight: isLight,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SliverToBoxAdapter(child: SizedBox(height: 32)),
+
+                    // 2. Primary Next Action Card (Today's Mission)
+                    SliverToBoxAdapter(
+                      child: Center(
+                        child: SizedBox(
+                          width: contentWidth,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: _buildTodayActionCard(
                               context: context,
-                              streak: streak,
+                              todayItem: todayItem,
                               todayDayNumber: todayDayNumber,
+                              streak: streak,
                               activeGold: activeGold,
-                              isLight: isLight,
                             ),
                           ),
                         ),
                       ),
                     ),
+
+                    const SliverToBoxAdapter(child: SizedBox(height: 18)),
+
+                    // 3. Today's Intention Card (Ash Surface #17191F)
+                    SliverToBoxAdapter(
+                      child: Center(
+                        child: SizedBox(
+                          width: contentWidth,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: _buildIntentionCard(context: context, isLight: isLight),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+                    // 4. Reset Your Moment Card (Ash Surface #17191F)
+                    SliverToBoxAdapter(
+                      child: Center(
+                        child: SizedBox(
+                          width: contentWidth,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: _buildResetCard(context: context, isLight: isLight),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // 5. Guaranteed safe bottom space: Content never hides behind AI ChatHub!
+                    SliverToBoxAdapter(child: SizedBox(height: bottomReservedSpace)),
                   ],
                 ),
 
-                // Enhanced Top Section Header
+                // Floating Header (Communicates state, identity, progress & Stoic quote)
                 Positioned(
                   top: 8, left: 16, right: 16,
                   child: _buildEnhancedTopHeader(
@@ -447,7 +486,9 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
 
   // ==========================================================================
   // ENHANCED TOP HEADER SECTION
-  // Clean, consistent, luxurious Glassmorphic Horizon Header
+  // Layer 1: Identity & Section Selector
+  // Layer 2: Status & Progress Dial
+  // Layer 3: Dynamic Stoic Emotional Anchor
   // ==========================================================================
   Widget _buildEnhancedTopHeader({
     required BuildContext context,
@@ -466,35 +507,21 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
     final completedInPhase = totalDaysCompleted >= 21 ? 7 : (totalDaysCompleted % 7);
     final quote = _compassQuotes[_currentQuoteIndex];
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isLight ? Colors.white.withValues(alpha: 0.94) : VinRColors.surface.withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isLight ? const Color(0x18000000) : VinRColors.borderGold.withValues(alpha: 0.35),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isLight ? 0.06 : 0.40),
-            blurRadius: 18,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    return GlassContainer(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+      borderRadius: 22,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Row 1: Section Title Chip + Badges (XP & Days Left)
+          // Row 1: Section Title + XP Pill + Flags
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Section Selector Chip
+              // Section Selector Dropdown Chip
               GestureDetector(
                 onTap: () => _showSectionPicker(context),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
                   decoration: BoxDecoration(
                     color: activeGold.withValues(alpha: isLight ? 0.12 : 0.16),
                     borderRadius: BorderRadius.circular(10),
@@ -503,63 +530,63 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(LucideIcons.compass, size: 11, color: activeGold),
+                      Icon(LucideIcons.compass, size: 12, color: activeGold),
                       const SizedBox(width: 5),
                       Text(
                         currentPhaseTitle,
                         style: TextStyle(
                           color: activeGold,
-                          fontSize: 9.5,
+                          fontSize: 10,
                           fontWeight: FontWeight.w900,
-                          letterSpacing: 0.7,
+                          letterSpacing: 0.8,
                         ),
                       ),
-                      const SizedBox(width: 3),
-                      Icon(LucideIcons.chevronDown, size: 10, color: activeGold),
+                      const SizedBox(width: 4),
+                      Icon(LucideIcons.chevronDown, size: 11, color: activeGold),
                     ],
                   ),
                 ),
               ),
 
-              // Badges
+              // XP Badge + Days Remaining
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   AnimatedBuilder(
                     animation: _xpCountAnimation,
                     builder: (context, _) => Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                       decoration: BoxDecoration(
                         color: VinRColors.xpGem.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(9),
                         border: Border.all(color: VinRColors.xpGem.withValues(alpha: 0.3), width: 0.8),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(LucideIcons.zap, size: 10.5, color: VinRColors.xpGem),
-                          const SizedBox(width: 3),
-                          Text('${_xpCountAnimation.value} XP', style: const TextStyle(color: VinRColors.xpGem, fontSize: 10, fontWeight: FontWeight.w900)),
+                          const Icon(LucideIcons.zap, size: 11, color: VinRColors.xpGem),
+                          const SizedBox(width: 3.5),
+                          Text('${_xpCountAnimation.value} XP', style: const TextStyle(color: VinRColors.xpGem, fontSize: 10.5, fontWeight: FontWeight.w900)),
                         ],
                       ),
                     ),
                   ),
                   const SizedBox(width: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                     decoration: BoxDecoration(
                       color: activeGold.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(9),
                       border: Border.all(color: activeGold.withValues(alpha: 0.3), width: 0.8),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(LucideIcons.flag, size: 10.5, color: activeGold),
-                        const SizedBox(width: 3),
+                        Icon(LucideIcons.flag, size: 11, color: activeGold),
+                        const SizedBox(width: 3.5),
                         Text(
                           daysRemaining == 0 ? 'COMPLETE' : '$daysRemaining left',
-                          style: TextStyle(color: activeGold, fontSize: 10, fontWeight: FontWeight.w900),
+                          style: TextStyle(color: activeGold, fontSize: 10.5, fontWeight: FontWeight.w900),
                         ),
                       ],
                     ),
@@ -569,44 +596,65 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
             ],
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
 
           // Row 2: Phase Subtitle + Progress Fraction
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                currentPhaseSubtitle,
-                style: TextStyle(
-                  color: context.textColor,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -0.2,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'YOUR JOURNEY',
+                    style: TextStyle(
+                      color: context.textMutedColor,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  Text(
+                    currentPhaseSubtitle,
+                    style: TextStyle(
+                      color: context.textColor,
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                ],
               ),
-              Text(
-                '$completedInPhase / 7 Days Cleared',
-                style: TextStyle(
-                  color: context.textMutedColor,
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w600,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isLight ? const Color(0xFFECE7DB) : VinRColors.backgroundAsh,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '$completedInPhase of 7 Cleared',
+                  style: TextStyle(
+                    color: activeGold,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
 
           // Progress Bar with Shimmer Stardust
           Stack(
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(3),
+                borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
                   value: phaseProgress == 0 && totalDaysCompleted > 0 ? 1.0 : phaseProgress,
                   backgroundColor: isLight ? const Color(0xFFE5E0D5) : const Color(0xFF1B2232),
                   color: activeGold,
-                  minHeight: 4,
+                  minHeight: 5,
                 ),
               ),
               if (phaseProgress > 0 && phaseProgress < 1)
@@ -617,14 +665,14 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
                       alignment: Alignment.centerLeft,
                       widthFactor: phaseProgress,
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(3),
+                        borderRadius: BorderRadius.circular(4),
                         child: ShaderMask(
                           shaderCallback: (rect) => LinearGradient(
                             colors: [Colors.white.withValues(alpha: 0.0), Colors.white.withValues(alpha: 0.5), Colors.white.withValues(alpha: 0.0)],
                             stops: [(_shimmerAnimation.value - 0.25).clamp(0.0, 1.0), _shimmerAnimation.value.clamp(0.0, 1.0), (_shimmerAnimation.value + 0.25).clamp(0.0, 1.0)],
                           ).createShader(rect),
                           blendMode: BlendMode.srcIn,
-                          child: Container(height: 4, color: Colors.white),
+                          child: Container(height: 5, color: Colors.white),
                         ),
                       ),
                     ),
@@ -635,12 +683,12 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
 
           const SizedBox(height: 8),
 
-          // Full-width Stoic Wisdom Quote (Never truncated!)
+          // Gentle Stoic Emotional Anchor
           FadeTransition(
             opacity: _quoteFadeAnimation,
             child: Row(
               children: [
-                Icon(LucideIcons.sparkles, size: 10, color: activeGold.withValues(alpha: 0.7)),
+                Icon(LucideIcons.sparkles, size: 10.5, color: activeGold.withValues(alpha: 0.7)),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
@@ -651,7 +699,7 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
                       fontStyle: FontStyle.italic,
                       height: 1.25,
                     ),
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -711,8 +759,7 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
   }
 
   // ==========================================================================
-  // ROADMAP TRAIL
-  // Serpentine S-Curves within safe margins so nodes never hide behind AI Chathub
+  // ROADMAP TRAIL (Curved serpentine S-trail with isolated active living blink)
   // ==========================================================================
   Widget _buildRoadmapTrail({
     required BuildContext context,
@@ -727,9 +774,15 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
         final dayNum = item.dayNumber;
         final isCompleted = dayNum <= streak.totalDaysCompleted;
         final isCurrent = dayNum == streak.totalDaysCompleted + 1 && !streak.isCompletedToday;
-        final isNextLocked = dayNum == streak.totalDaysCompleted + 2 && !streak.isCompletedToday;
+        final isUpcoming = dayNum == streak.totalDaysCompleted + 2 && !streak.isCompletedToday;
         final isMilestone = dayNum == 7 || dayNum == 14 || dayNum == 21;
-        final nodeState = isCompleted ? PathNodeState.completed : (isCurrent ? PathNodeState.active : PathNodeState.locked);
+
+        final PathNodeState nodeState = isCompleted
+            ? PathNodeState.completed
+            : (isCurrent
+                ? PathNodeState.active
+                : (isUpcoming ? PathNodeState.upcoming : PathNodeState.locked));
+
         final currentXOffset = _getNodeOffset(dayNum);
 
         return Column(
@@ -768,73 +821,32 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
                 isLight: isLight,
               ),
 
-            // Node with Aura & Ripple Rings
-            Stack(
-              clipBehavior: Clip.none,
-              alignment: Alignment.center,
-              children: [
-                // Active node luminous beacon aura (Smooth, organic breathing)
-                if (isCurrent)
-                  AnimatedBuilder(
-                    animation: _auraAnimation,
-                    builder: (context, child) => Transform.translate(
-                      offset: Offset(currentXOffset, 0),
-                      child: Container(
-                        width: 90 * _auraAnimation.value,
-                        height: 90 * _auraAnimation.value,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: VinRColors.emerald.withValues(alpha: 0.12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: VinRColors.emerald.withValues(alpha: 0.28),
-                              blurRadius: 26,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
+            // Node with Living Blink (Isolated performance widget!)
+            Transform.translate(
+              offset: Offset(currentXOffset, 0),
+              child: isCurrent
+                  ? _ActiveBlinkingNode(
+                      child: VinRPathNode(
+                        dayNumber: dayNum,
+                        title: item.title,
+                        category: item.category,
+                        subtitle: '${item.tasks.length} Catalysts',
+                        icon: isMilestone ? (dayNum == 21 ? LucideIcons.crown : LucideIcons.trophy) : item.icon,
+                        state: nodeState,
+                        isMilestone: isMilestone,
+                        onTap: () => _openQuestBottomSheet(context, item, streak.totalDaysCompleted, streak.isCompletedToday),
                       ),
+                    )
+                  : VinRPathNode(
+                      dayNumber: dayNum,
+                      title: item.title,
+                      category: item.category,
+                      subtitle: '${item.tasks.length} Catalysts',
+                      icon: isMilestone ? (dayNum == 21 ? LucideIcons.crown : LucideIcons.trophy) : item.icon,
+                      state: nodeState,
+                      isMilestone: isMilestone,
+                      onTap: () => _openQuestBottomSheet(context, item, streak.totalDaysCompleted, streak.isCompletedToday),
                     ),
-                  ),
-
-                // Ripple ring on the next locked milestone
-                if (isNextLocked)
-                  AnimatedBuilder(
-                    animation: _rippleAnimation,
-                    builder: (context, child) {
-                      final rippleSize = 65.0 + (_rippleAnimation.value * 35);
-                      return Transform.translate(
-                        offset: Offset(currentXOffset, 0),
-                        child: Container(
-                          width: rippleSize,
-                          height: rippleSize,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: activeGold.withValues(alpha: (1.0 - _rippleAnimation.value) * 0.40),
-                              width: 1.5,
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-
-                // Node Widget
-                Transform.translate(
-                  offset: Offset(currentXOffset, 0),
-                  child: VinRPathNode(
-                    dayNumber: dayNum,
-                    title: item.title,
-                    category: item.category,
-                    subtitle: '${item.tasks.length} Catalysts',
-                    icon: isMilestone ? (dayNum == 21 ? LucideIcons.crown : LucideIcons.trophy) : item.icon,
-                    state: nodeState,
-                    isMilestone: isMilestone,
-                    onTap: () => _openQuestBottomSheet(context, item, streak.totalDaysCompleted, streak.isCompletedToday),
-                  ),
-                ),
-              ],
             ),
 
             const SizedBox(height: 6),
@@ -878,11 +890,245 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
             endX: currentOffset,
             isCompleted: isCompleted,
             activeColor: activeGold,
-            trackColor: isLight ? const Color(0xFFD0C8B8) : const Color(0xFF1E283C),
-            coreTrackColor: isLight ? const Color(0xFFB8AE9C) : const Color(0xFF2E3D5C),
+            trackColor: isLight ? const Color(0xFFD0C8B8) : const Color(0xFF243048),
+            coreTrackColor: isLight ? const Color(0xFFB8AE9C) : const Color(0xFF324365),
             shimmerProgress: isCompleted ? 0.0 : _shimmerAnimation.value,
           ),
         ),
+      ),
+    );
+  }
+
+  // ==========================================================================
+  // TODAY PRIMARY ACTION CARD (Motivating, clear, never hidden behind ChatHub)
+  // ==========================================================================
+  Widget _buildTodayActionCard({
+    required BuildContext context,
+    required DayRoadmapItem todayItem,
+    required int todayDayNumber,
+    required dynamic streak,
+    required Color activeGold,
+  }) {
+    final isDoneToday = streak.isCompletedToday;
+    final isLight = context.isLight;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isLight ? Colors.white : VinRColors.backgroundElevated,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDoneToday ? VinRColors.emerald.withValues(alpha: 0.5) : activeGold.withValues(alpha: 0.5),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: (isDoneToday ? VinRColors.emerald : activeGold).withValues(alpha: 0.15),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+                decoration: BoxDecoration(
+                  color: (isDoneToday ? VinRColors.emerald : activeGold).withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isDoneToday ? LucideIcons.checkCheck : LucideIcons.play,
+                      size: 12,
+                      color: isDoneToday ? VinRColors.emerald : activeGold,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      isDoneToday ? 'DAY $todayDayNumber COMPLETED' : 'TODAY\'S PRIMARY MISSION',
+                      style: TextStyle(
+                        color: isDoneToday ? VinRColors.emerald : activeGold,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                decoration: BoxDecoration(
+                  color: VinRColors.xpGem.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(LucideIcons.zap, size: 11, color: VinRColors.xpGem),
+                    SizedBox(width: 3.5),
+                    Text('+50 XP', style: TextStyle(color: VinRColors.xpGem, fontSize: 10.5, fontWeight: FontWeight.w900)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Day $todayDayNumber: ${todayItem.title}',
+            style: VinRTypography.h2.copyWith(color: context.textColor, fontSize: 17),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            todayItem.category,
+            style: TextStyle(color: context.textMutedColor, fontSize: 12.5),
+          ),
+          const SizedBox(height: 14),
+          Tactile3DButton(
+            text: isDoneToday ? 'Review Today\'s Catalysts' : 'Begin Day $todayDayNumber Mission',
+            variant: isDoneToday ? TactileButtonVariant.emerald : TactileButtonVariant.gold,
+            icon: isDoneToday ? LucideIcons.checkCheck : LucideIcons.arrowRight,
+            onPressed: () => _openQuestBottomSheet(context, todayItem, streak.totalDaysCompleted, streak.isCompletedToday),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================================================
+  // TODAY'S INTENTION CARD (Semantic Ash Surface #17191F — Calm, grounding)
+  // ==========================================================================
+  Widget _buildIntentionCard({required BuildContext context, required bool isLight}) {
+    final activeGold = context.goldColor;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isLight ? const Color(0xFFF7F5EE) : VinRColors.ashSurface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isLight ? const Color(0xFFDDD8CC) : VinRColors.borderAsh,
+          width: 1,
+        ),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(LucideIcons.sparkles, size: 13, color: activeGold),
+                  const SizedBox(width: 6),
+                  Text(
+                    'TODAY\'S INTENTION',
+                    style: TextStyle(
+                      color: activeGold,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ],
+              ),
+              GestureDetector(
+                onTap: () => context.push('/journal'),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Reflect', style: TextStyle(color: context.textMutedColor, fontSize: 11, fontWeight: FontWeight.bold)),
+                    const SizedBox(width: 3),
+                    Icon(LucideIcons.chevronRight, size: 12, color: context.textMutedColor),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            '"I will give myself space to grow today, focusing only on the effort within my control."',
+            style: TextStyle(
+              color: context.textColor,
+              fontSize: 13,
+              fontStyle: FontStyle.italic,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Grounding Standard \u2022 Pause before reacting',
+            style: TextStyle(color: context.textMutedColor, fontSize: 11),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================================================
+  // RESET YOUR MOMENT CARD (Semantic Ash Surface #17191F — Compassionate reset)
+  // ==========================================================================
+  Widget _buildResetCard({required BuildContext context, required bool isLight}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isLight ? const Color(0xFFF7F5EE) : VinRColors.ashSurface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isLight ? const Color(0xFFDDD8CC) : VinRColors.borderAsh,
+          width: 1,
+        ),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: VinRColors.sapphire.withValues(alpha: 0.15),
+            ),
+            child: const Icon(LucideIcons.wind, size: 18, color: VinRColors.sapphire),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'RESET YOUR MOMENT',
+                  style: TextStyle(
+                    color: VinRColors.sapphire,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Take a breath. Start again from where you are.',
+                  style: TextStyle(color: context.textColor, fontSize: 12.5, fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          OutlinedButton(
+            onPressed: () => context.push('/breathing'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: VinRColors.sapphire,
+              side: BorderSide(color: VinRColors.sapphire.withValues(alpha: 0.4)),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Reset', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
   }
@@ -907,12 +1153,12 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
       decoration: BoxDecoration(
         color: isUnlocked
             ? activeColor.withValues(alpha: isLight ? 0.08 : 0.12)
-            : (isLight ? const Color(0xFFF7F5EE) : const Color(0xFF0F1420)),
+            : (isLight ? const Color(0xFFF7F5EE) : const Color(0xFF141926)),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
           color: isUnlocked
               ? activeColor.withValues(alpha: 0.55)
-              : (isLight ? const Color(0xFFDDD8CC) : const Color(0xFF222B3E)),
+              : (isLight ? const Color(0xFFDDD8CC) : const Color(0xFF26334D)),
           width: isUnlocked ? 1.5 : 1.0,
         ),
         boxShadow: isUnlocked
@@ -977,9 +1223,7 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
               ),
             ],
           ),
-
           const SizedBox(height: 12),
-
           Text(
             '"$quote"',
             style: TextStyle(
@@ -990,9 +1234,7 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
             ),
             textAlign: TextAlign.center,
           ),
-
           const SizedBox(height: 6),
-
           Text(
             '— $author',
             style: TextStyle(
@@ -1002,9 +1244,7 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
             ),
             textAlign: TextAlign.center,
           ),
-
           const SizedBox(height: 12),
-
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
             decoration: BoxDecoration(
@@ -1046,6 +1286,85 @@ class _JourneyScreenState extends ConsumerState<JourneyScreen>
 }
 
 // =============================================================================
+// ISOLATED LIVING BLINK NODE (Phase D & L: Zero whole-screen rebuilds)
+// =============================================================================
+class _ActiveBlinkingNode extends StatefulWidget {
+  final Widget child;
+  const _ActiveBlinkingNode({required this.child});
+
+  @override
+  State<_ActiveBlinkingNode> createState() => _ActiveBlinkingNodeState();
+}
+
+class _ActiveBlinkingNodeState extends State<_ActiveBlinkingNode>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _blinkController;
+  late final Animation<double> _auraScaleAnimation;
+  late final Animation<double> _auraOpacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _blinkController = AnimationController(
+      vsync: this,
+      duration: VinRMotion.ambient,
+    )..repeat(reverse: true);
+
+    _auraScaleAnimation = Tween<double>(begin: 0.94, end: 1.10).animate(
+      CurvedAnimation(parent: _blinkController, curve: VinRMotion.standard),
+    );
+
+    _auraOpacityAnimation = Tween<double>(begin: 0.70, end: 1.0).animate(
+      CurvedAnimation(parent: _blinkController, curve: VinRMotion.standard),
+    );
+  }
+
+  @override
+  void dispose() {
+    _blinkController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _blinkController,
+      builder: (context, child) {
+        return Stack(
+          alignment: Alignment.center,
+          clipBehavior: Clip.none,
+          children: [
+            // Ambient Aura Halo
+            Transform.scale(
+              scale: _auraScaleAnimation.value,
+              child: Opacity(
+                opacity: _auraOpacityAnimation.value,
+                child: Container(
+                  width: 90,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: VinRColors.emerald.withValues(alpha: 0.12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: VinRColors.emerald.withValues(alpha: 0.30),
+                        blurRadius: 28,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            widget.child,
+          ],
+        );
+      },
+    );
+  }
+}
+
+// =============================================================================
 // CUSTOM PAINTER: Trail Segment (Bézier + high-contrast stardust beads)
 // =============================================================================
 class _TrailSegmentPainter extends CustomPainter {
@@ -1079,6 +1398,7 @@ class _TrailSegmentPainter extends CustomPainter {
       ..cubicTo(cp0.dx, cp0.dy, cp1.dx, cp1.dy, p1.dx, p1.dy);
 
     if (isCompleted) {
+      // 1. Radiant luminous blur aura
       canvas.drawPath(
         path,
         Paint()
@@ -1089,6 +1409,7 @@ class _TrailSegmentPainter extends CustomPainter {
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
       );
 
+      // 2. Core golden trail ribbon
       canvas.drawPath(
         path,
         Paint()
@@ -1098,6 +1419,7 @@ class _TrailSegmentPainter extends CustomPainter {
           ..strokeCap = StrokeCap.round,
       );
 
+      // 3. Sharp center gold spine
       canvas.drawPath(
         path,
         Paint()
@@ -1107,10 +1429,11 @@ class _TrailSegmentPainter extends CustomPainter {
           ..strokeCap = StrokeCap.round,
       );
     } else {
+      // Uncompleted / Locked trail: Crisp, visible slate paved road
       canvas.drawPath(
         path,
         Paint()
-          ..color = trackColor.withValues(alpha: 0.55)
+          ..color = trackColor.withValues(alpha: 0.5)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 8.0
           ..strokeCap = StrokeCap.round,
@@ -1126,6 +1449,7 @@ class _TrailSegmentPainter extends CustomPainter {
       );
     }
 
+    // 4. Stepping Stones / Stardust Beads along the curve
     const dotCount = 5;
     for (int i = 1; i <= dotCount; i++) {
       final t = i / (dotCount + 1).toDouble();
@@ -1266,7 +1590,7 @@ class _QuestDetailModalState extends State<_QuestDetailModal> with SingleTickerP
   @override
   Widget build(BuildContext context) {
     final isLight = Theme.of(context).brightness == Brightness.light;
-    final bg = isLight ? Colors.white : VinRColors.elevated;
+    final bg = isLight ? Colors.white : VinRColors.backgroundElevated;
     final primaryTextColor = isLight ? const Color(0xFF1A1208) : VinRColors.textPrimary;
     final mutedTextColor = isLight ? const Color(0xFF5C5446) : VinRColors.textMuted;
     final activeGold = isLight ? const Color(0xFFB8832A) : VinRColors.gold;
@@ -1380,6 +1704,7 @@ class _QuestDetailModalState extends State<_QuestDetailModal> with SingleTickerP
 
               const SizedBox(height: 18),
 
+              // Checklist with Ash Surface for Uncompleted & Emerald for Completed
               Column(
                 children: widget.item.tasks.asMap().entries.map((entry) {
                   final index = entry.key;
@@ -1391,17 +1716,19 @@ class _QuestDetailModalState extends State<_QuestDetailModal> with SingleTickerP
                     onTap: widget.isCurrent ? () => _handleToggle(task.id) : null,
                     behavior: HitTestBehavior.opaque,
                     child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 280),
-                      curve: Curves.easeOutCubic,
+                      duration: VinRMotion.normal,
+                      curve: VinRMotion.emphasized,
                       margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: isDone
                             ? VinRColors.emerald.withValues(alpha: isLight ? 0.08 : 0.12)
-                            : (isLight ? const Color(0xFFF7F5F0) : VinRColors.surface),
+                            : (isLight ? const Color(0xFFF7F5F0) : VinRColors.ashSurface),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: isDone ? VinRColors.emerald.withValues(alpha: 0.5) : (isLight ? const Color(0x15000000) : VinRColors.border),
+                          color: isDone
+                              ? VinRColors.emerald.withValues(alpha: 0.5)
+                              : (isLight ? const Color(0x15000000) : VinRColors.borderAsh),
                           width: isDone ? 1.5 : 1.0,
                         ),
                         boxShadow: isBursting ? [BoxShadow(color: VinRColors.emerald.withValues(alpha: 0.35), blurRadius: 16, spreadRadius: 2)] : null,
@@ -1507,7 +1834,7 @@ class _QuestDetailModalState extends State<_QuestDetailModal> with SingleTickerP
                       duration: const Duration(milliseconds: 220),
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                       decoration: BoxDecoration(
-                        color: isSelected ? activeGold.withValues(alpha: 0.2) : (isLight ? const Color(0xFFEDE9DF) : VinRColors.surface),
+                        color: isSelected ? activeGold.withValues(alpha: 0.2) : (isLight ? const Color(0xFFEDE9DF) : VinRColors.ashSurface),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: isSelected ? activeGold : Colors.transparent, width: 1.5),
                       ),

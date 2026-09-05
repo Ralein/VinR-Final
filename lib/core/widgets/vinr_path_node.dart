@@ -9,6 +9,7 @@ import 'app_animations.dart';
 enum PathNodeState {
   completed,
   active,
+  upcoming,
   locked,
 }
 
@@ -63,10 +64,15 @@ class _VinRPathNodeState extends State<VinRPathNode> {
         bevelColor = isLight ? const Color(0xFF1E6C51) : VinRColors.emeraldBevel;
         iconColor = Colors.white;
         break;
+      case PathNodeState.upcoming:
+        topColor = isLight ? const Color(0xFFEAE5DA) : VinRColors.ashSurface;
+        bevelColor = isLight ? const Color(0xFFD3CCBD) : const Color(0xFF101318);
+        iconColor = isLight ? const Color(0xFF7A7060) : const Color(0xFF8E9BB5);
+        break;
       case PathNodeState.locked:
-        topColor = isLight ? const Color(0xFFE2DDD2) : const Color(0xFF182030);
-        bevelColor = isLight ? const Color(0xFFC7C0B2) : const Color(0xFF0E131E);
-        iconColor = isLight ? const Color(0xFF8C8474) : const Color(0xFF627394);
+        topColor = isLight ? const Color(0xFFE2DDD2) : const Color(0xFF141926);
+        bevelColor = isLight ? const Color(0xFFC7C0B2) : const Color(0xFF0B0E16);
+        iconColor = isLight ? const Color(0xFF8C8474) : const Color(0xFF53627E);
         break;
     }
 
@@ -200,7 +206,9 @@ class _VinRPathNodeState extends State<VinRPathNode> {
                             ? Colors.white.withValues(alpha: 0.85)
                             : (widget.state == PathNodeState.completed
                                 ? Colors.white.withValues(alpha: 0.4)
-                                : (isLight ? const Color(0xFFCCC5B8) : const Color(0xFF2E3A52))),
+                                : (widget.state == PathNodeState.upcoming
+                                    ? (isLight ? const Color(0xFFB5AC9B) : const Color(0xFF2E3A52))
+                                    : (isLight ? const Color(0xFFCCC5B8) : const Color(0xFF1F2738)))),
                         width: widget.state == PathNodeState.active ? 2.5 : 1.5,
                       ),
                       boxShadow: widget.state == PathNodeState.locked || _isPressed
