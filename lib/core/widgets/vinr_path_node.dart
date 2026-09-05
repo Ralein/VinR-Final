@@ -64,9 +64,9 @@ class _VinRPathNodeState extends State<VinRPathNode> {
         iconColor = Colors.white;
         break;
       case PathNodeState.locked:
-        topColor = isLight ? const Color(0xFFE2DDD2) : const Color(0xFF161C2C);
-        bevelColor = isLight ? const Color(0xFFC7C0B2) : const Color(0xFF0D111A);
-        iconColor = isLight ? const Color(0xFF8C8474) : VinRColors.textGhost;
+        topColor = isLight ? const Color(0xFFE2DDD2) : const Color(0xFF182030);
+        bevelColor = isLight ? const Color(0xFFC7C0B2) : const Color(0xFF0E131E);
+        iconColor = isLight ? const Color(0xFF8C8474) : const Color(0xFF627394);
         break;
     }
 
@@ -75,42 +75,51 @@ class _VinRPathNodeState extends State<VinRPathNode> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Active Node Pointer Speech Bubble ("START HERE" or Flame)
+        // Active Node Pointer Speech Bubble ("START HERE")
         if (widget.state == PathNodeState.active)
           AnimatedPulse(
             duration: const Duration(milliseconds: 1400),
-            minScale: 0.94,
-            maxScale: 1.06,
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: VinRColors.emerald,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: VinRColors.emerald.withValues(alpha: 0.4),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
+            minScale: 0.95,
+            maxScale: 1.05,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: VinRColors.emerald,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: VinRColors.emerald.withValues(alpha: 0.5),
+                        blurRadius: 12,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(LucideIcons.play, size: 12, color: Colors.white),
-                  SizedBox(width: 4),
-                  Text(
-                    'TODAY',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.8,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(LucideIcons.play, size: 11, color: Colors.white),
+                      SizedBox(width: 4),
+                      Text(
+                        'START HERE',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                CustomPaint(
+                  size: const Size(10, 5),
+                  painter: _SpeechArrowPainter(color: VinRColors.emerald),
+                ),
+                const SizedBox(height: 3),
+              ],
             ),
           )
         else if (widget.isMilestone)
@@ -188,10 +197,10 @@ class _VinRPathNodeState extends State<VinRPathNode> {
                           : null,
                       border: Border.all(
                         color: widget.state == PathNodeState.active
-                            ? Colors.white.withValues(alpha: 0.8)
+                            ? Colors.white.withValues(alpha: 0.85)
                             : (widget.state == PathNodeState.completed
                                 ? Colors.white.withValues(alpha: 0.4)
-                                : context.borderColor),
+                                : (isLight ? const Color(0xFFCCC5B8) : const Color(0xFF2E3A52))),
                         width: widget.state == PathNodeState.active ? 2.5 : 1.5,
                       ),
                       boxShadow: widget.state == PathNodeState.locked || _isPressed
@@ -296,4 +305,23 @@ class _VinRPathNodeState extends State<VinRPathNode> {
       ],
     );
   }
+}
+
+
+class _SpeechArrowPainter extends CustomPainter {
+  final Color color;
+  const _SpeechArrowPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width / 2, size.height)
+      ..lineTo(size.width, 0)
+      ..close();
+    canvas.drawPath(path, Paint()..color = color..style = PaintingStyle.fill);
+  }
+
+  @override
+  bool shouldRepaint(covariant _SpeechArrowPainter old) => old.color != color;
 }
